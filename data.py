@@ -1,5 +1,6 @@
 import requests
 import pandas as pd
+import numpy as np
 import os
 from dotenv import load_dotenv
 
@@ -37,6 +38,26 @@ def get_btc_OHLC():
     df.set_index('date', inplace = True)
     return df
 
+def get_drawdown_ath():
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/market/price_drawdown_relative'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    date = []
+    price = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        price.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['price'] = price
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df + 1
+
+
+
 def get_rsi(df,n):
     n = 14
     df_rsi = df.copy()
@@ -56,20 +77,37 @@ def get_rsi(df,n):
     return df_rsi['rsi_14']
 
 
-def get_MA(df):
-    ma_5 = df.iloc[:,0].rolling(window=5).mean()
-    ma_10 = df.iloc[:,0].rolling(window=10).mean()
-    ma_25 = df.iloc[:,0].rolling(window=25).mean()
-    ma_50 = df.iloc[:,0].rolling(window=50).mean()
-    ma_100 = df.iloc[:,0].rolling(window=100).mean()
-    ma_200 = df.iloc[:,0].rolling(window=200).mean()
-    return ma_5, ma_10, ma_25, ma_50, ma_100, ma_200
+def get_MA_EMA(df):
+    ma_5 = df.rolling(window=5).mean()
+    ma_10 = df.rolling(window=10).mean()
+    ma_25 = df.rolling(window=25).mean()
+    ma_50 = df.rolling(window=50).mean()
+    ma_100 = df.rolling(window=100).mean()
+    #ma_200 = df.iloc[:,0].rolling(window=200).mean()
+
+    ema_20 = df.ewm(span = 20).mean()
+    ema_30 = df.ewm(span = 30).mean()
+
+    diff_p_5 = df - ma_5
+    diff_p_10 = df - ma_10
+    diff_p_25 = df - ma_25
+    diff_P_100 = df - ma_100
+
+    diff_p_ema_20 = df - ema_20
+    diff_P_ema_30 = df -ema_30
+
+    diff_25_50 = ma_25 - ma_50
+    diff_25_100 = ma_25 - ma_100
+    diff_50_100 = ma_50 - ma_100
+
+    diff_ema_20_ema_30 = ema_20 - ema_30
+
+    diff_ma_5_ema_20 = ma_5 - ema_20
+    diff_ma_5_ema_30 = ma_5 - ema_30
+    diff_ema_20_ma_50 = ema_20 - ma_50
+    return diff_p_5, diff_p_10, diff_p_25, diff_P_100, diff_p_ema_20, diff_P_ema_30, diff_25_50, diff_25_100, diff_50_100, diff_ema_20_ema_30, diff_ma_5_ema_20, diff_ma_5_ema_30, diff_ema_20_ema_30
 
 
-def get_EMA(df):
-    ema_20 = df.iloc[:,0].ewm(span = 20).mean()
-    ema_30 = df.iloc[:,0].ewm(span = 30).mean()
-    return ema_20, ema_30
 
 
 def get_SMI(df) :
@@ -134,16 +172,18 @@ def get_ATR(df):
     return df_atr['ATR']
 
 
+df_a = get_drawdown_ath()
 df = get_btc_OHLC()
 df['rsi_14']= get_rsi(df,14)
-df['ma_5'],df['ma_10'],df['ma_25'],df['ma_50'],df['ma_100'],df['ma_200'] = get_MA(df)
-df['ema_20'],df['ema_30'] = get_EMA(df)
+df_a[1],df_a[2],df_a[3],df_a[4],df_a[5],df_a[6], df_a[7], df_a[8], df_a[9], df_a[10], df_a[11], df_a[12], df_a[13] = get_MA_EMA(df_a)
 df['SMI'] = get_SMI(df)
 df['CCI'] = get_CCI(df)
 df['william_a/d'] = get_william_A_D(df)
 df['ATR'] = get_ATR(df)
 
-df.to_csv('../data/data.csv')
+#df.to_csv('../data/data.csv')
 
 if __name__ == '__main__':
+    print(df_a)
+    df_a.to_csv('ma_ema.csv')
 

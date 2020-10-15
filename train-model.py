@@ -1,15 +1,15 @@
 from utility_function import wavelet_transform, get_sample,get_X_y, autoencoder, init_model, plot_loss
+from utility_function import get_prediction, get_performance
 import pandas as pd
 import numpy as np
 from tensorflow.keras.callbacks import EarlyStopping
 import ipdb
+import json
 
 class Trainer() :
     def __init__(self, df, df_test, n_days, length ) :
         self.n_days = n_days
         self.length = length
-        self.train_days = 815
-        self.predict_days = 90
         self.df = df
         self.df_test = df_test
 
@@ -27,7 +27,8 @@ class Trainer() :
                    callbacks = [es],
                    epochs = 1000,
                    batch_size = 64,
-                   shuffle = True)
+                   shuffle = True,
+                   verbose = False)
 
 
         X_encode = self.autoencoder.predict(X)
@@ -37,7 +38,7 @@ class Trainer() :
         new_df['price'] = df['price']
 
 
-        length_of_sequences = [self.length for x in range(3500)]
+        length_of_sequences = [self.length for x in range(820)]
         X_train, y_train = get_X_y(new_df, self.n_days, length_of_sequences)
 
         self.model = init_model(self.length, self.n_days)
@@ -47,69 +48,27 @@ class Trainer() :
                     callbacks = [es],
                     epochs = 1000,
                     batch_size = 32,
-                    shuffle = True)
+                    shuffle = True,
+                    verbose = False)
 
     def learning_viz(self) :
-
         self.train
         history = self.history
-
         plot_loss(history)
 
 
     def get_prediction(self) :
         self.train()
-        df_test = self.df_test
-
-
-        df_test_n = df_test.copy()
-        df_test_n['price'] = wavelet_transform(df_test_n)[:len(df_test_n)]
-
-        df_test = df_test[self.length + 1:]
-
-        prediction = []
-        for x in range(len(df_test)):
-            encode = self.autoencoder.predict(df_test_n[x:x+self.length])
-            encode.shape = (1,encode.shape[0], encode.shape[1])
-            predict = self.model.predict(encode)
-            prediction.append(predict)
-
-        prediction = np.array(prediction)
-        prediction.shape = (89)
-        self.prediction = prediction
-        self.df_test = df_test
+        self.prediction = get_prediction(self.df_test,self.length, 90, self.autoencoder, self.model)
 
 
     def get_perf(self) :
         self.get_prediction()
         prediction = self.prediction
-        df_test = self.df_test
-        df_perf = df_test[['price']]
-        df_perf['prediction'] = prediction
-        df_perf.columns  = ['true', 'prediction']
-        long = []
-        for i in range(len(df_perf)-1):
-            if df_perf['prediction'].iloc[i+1] > df_perf['prediction'].iloc[i] :
-                long.append(1)
-            else :
-                long.append(0)
-        long.append(0)
-        df_perf['long'] = long
+        df_test = self.df_test[self.length:]
+        self.perf ,self.hold, self.min , self.max , self.long, self.up = get_performance(df_test, self.prediction)
 
-
-        perf = [0]
-        for i in range(len(df_perf)-1):
-            if df_perf['long'].iloc[i-1] == 1 :
-                x = (df_perf['true'].iloc[i] - df_perf['true'].iloc[i-1]) / df_perf['true'].iloc[i-1]
-                perf.append(1 + x)
-            else :
-                x = (df_perf['true'].iloc[i-1] - df_perf['true'].iloc[i]) / df_perf['true'].iloc[i-1]
-                perf.append(1 + x)
-        df_perf['perf'] = perf
-
-        self.df_perf = df_perf
-        self.perf = df_perf['perf'].iloc[1:].prod()
-        print("profit:", self.perf)
+    #def predict_viz(self) :
 
 
 if __name__ == '__main__':
@@ -119,25 +78,55 @@ if __name__ == '__main__':
     #ipdb.set_trace()
     n = 820
     s = 0
-    for x in range(10000) :
+    return_trim = {}
+    return_hold = {}
+    detail_perf = {}
+    for x in range(30) :
+        detail = []
         if x == 0 :
             df_test = df[820-length:910]
             df_ = df[:820]
             t = Trainer(df_, df_test, 1, 5)
             t.get_perf()
+            return_trim[x] = t.perf
+            print(f"profit of period {x}: {t.perf}")
+
+            return_hold[x] = t.hold
+
+            detail.append(t.min)
+            detail.append(t.max)
+            detail.append(t.long)
+            detail.append(t.up)
+            detail_perf[x] = detail
+
         else :
-            p =+ 90
-            n =+ 90
-            if n < len(df):
-                df_test = df[n-length:n+90]
-                df_ = df[s:n]
-                t = Trainer(df_, df_test, 1, 5)
-                t.get_perf()
-            else :
-                break
-    #length_of_sequences = [5 for x in range(3500)]
-    #a,b = get_X_y(df, 1, length_of_sequences)
-    #print(a,b)
+            s += 90
+            n += 90
+
+            df_test = df[n-length:n+90]
+            df_ = df[s:n]
+            t = Trainer(df_, df_test, 1, 5)
+            t.get_perf()
+            return_trim['x'] = t.perf
+
+            return_hold[x] = t.hold
+
+            detail.append(t.min)
+            detail.append(t.max)
+            detail.append(t.long)
+            detail.append(t.up)
+            detail_perf[x] = detail
+
+
+    with open('performance.json', 'w') as fp:
+        json.dump(return_trim, fp,  indent=4)
+
+    with open('perf_hold.json', 'w') as fp:
+        json.dump(return_hold, fp, indent = 4)
+
+    with open('detail_perf.json', 'w') as fp:
+        json.dump(detail_perf, fp, indent = 4)
+
 
 
 

@@ -82,3 +82,69 @@ def plot_loss(history):
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'], loc='best')
     plt.show()
+
+def get_prediction(df_test,length, period_test , autoencoder, model):
+    df_test_n = df_test.copy()
+    df_test_n['price'] = wavelet_transform(df_test_n)[:len(df_test_n)]
+
+    df_test = df_test[length:]
+
+    prediction = []
+    for x in range(len(df_test)):
+        encode = autoencoder.predict(df_test_n[x:x+length])
+        encode.shape = (1, encode.shape[0], encode.shape[1])
+        predict = model.predict(encode)
+        prediction.append(predict)
+
+    prediction = np.array(prediction)
+    prediction.shape = (period_test)
+
+    return prediction
+
+def get_performance(df_test, prediction):
+        df_perf = df_test[['price']]
+        df_perf['prediction'] = prediction
+        df_perf.columns  = ['true', 'prediction']
+
+        long = []
+        for i in range(len(df_perf)-1):
+            if df_perf['prediction'].iloc[i+1] > df_perf['prediction'].iloc[i] :
+                long.append(1)
+            else :
+                long.append(0)
+        long.append(0)
+        df_perf['long'] = long
+
+        up = [0]
+        for i in range(1,len(df_perf)):
+             if df_perf['true'].iloc[i] > df_perf['true'].iloc[i-1] :
+                up.append(1)
+             else :
+                up.append(0)
+        df_perf['up'] = up
+
+        perf = [0]
+        for i in range(1,len(df_perf)):
+            if df_perf['long'].iloc[i-1] == 1 :
+                x = (df_perf['true'].iloc[i] - df_perf['true'].iloc[i-1]) / df_perf['true'].iloc[i-1]
+                perf.append(1 + x)
+            else :
+                x = (df_perf['true'].iloc[i-1] - df_perf['true'].iloc[i]) / df_perf['true'].iloc[i-1]
+                perf.append(1 + x)
+        df_perf['perf'] = perf
+
+        hold = [0]
+        for i in range(1,len(df_perf)):
+                x = (df_perf['true'].iloc[i] - df_perf['true'].iloc[i-1]) / df_perf['true'].iloc[i-1]
+                hold.append(1 + x)
+        df_perf['hold'] = hold
+
+
+        perf_min = df_perf['perf'].min()
+        perf_max = df_perf['perf'].max()
+
+        nb_long = df_perf[df_perf['long'] == 1].count()
+
+        nb_up = df_perf[df_perf['up'] == 1].count()
+
+        return df_perf['perf'].iloc[1:].prod() ,df_perf['hold'].iloc[1:].prod(), perf_min , perf_max , nb_long, nb_up

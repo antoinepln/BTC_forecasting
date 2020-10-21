@@ -78,23 +78,23 @@ def get_rsi(df,n):
 
 
 def get_MA_EMA(df):
-    ma_5 = df.rolling(window=5).mean()
-    ma_10 = df.rolling(window=10).mean()
-    ma_25 = df.rolling(window=25).mean()
-    ma_50 = df.rolling(window=50).mean()
-    ma_100 = df.rolling(window=100).mean()
+    ma_5 = df['close'].rolling(window=5).mean()
+    ma_10 = df['close'].rolling(window=10).mean()
+    ma_25 = df['close'].rolling(window=25).mean()
+    ma_50 = df['close'].rolling(window=50).mean()
+    ma_100 = df['close'].rolling(window=100).mean()
     #ma_200 = df.iloc[:,0].rolling(window=200).mean()
 
-    ema_20 = df.ewm(span = 20).mean()
-    ema_30 = df.ewm(span = 30).mean()
+    ema_20 = df['close'].ewm(span = 20).mean()
+    ema_30 = df['close'].ewm(span = 30).mean()
 
-    diff_p_5 = df - ma_5
-    diff_p_10 = df - ma_10
-    diff_p_25 = df - ma_25
-    diff_P_100 = df - ma_100
+    diff_p_5 = df['close'] - ma_5
+    diff_p_10 = df['close'] - ma_10
+    diff_p_25 = df['close'] - ma_25
+    diff_P_100 = df['close'] - ma_100
 
-    diff_p_ema_20 = df - ema_20
-    diff_P_ema_30 = df -ema_30
+    diff_p_ema_20 = df['close'] - ema_20
+    diff_P_ema_30 = df['close'] -ema_30
 
     diff_25_50 = ma_25 - ma_50
     diff_25_100 = ma_25 - ma_100
@@ -172,18 +172,18 @@ def get_ATR(df):
     return df_atr['ATR']
 
 
-df_a = get_drawdown_ath()
+
 df = get_btc_OHLC()
 df['rsi_14']= get_rsi(df,14)
-df_a[1],df_a[2],df_a[3],df_a[4],df_a[5],df_a[6], df_a[7], df_a[8], df_a[9], df_a[10], df_a[11], df_a[12], df_a[13] = get_MA_EMA(df_a)
+df[1],df[2],df[3],df[4],df[5],df[6], df[7], df[8], df[9], df[10], df[11], df[12], df[13] = get_MA_EMA(df)
 df['SMI'] = get_SMI(df)
 df['CCI'] = get_CCI(df)
 df['william_a/d'] = get_william_A_D(df)
 df['ATR'] = get_ATR(df)
+df['ath'] = get_drawdown_ath()
 
 #df.to_csv('../data/data.csv')
 
 if __name__ == '__main__':
-    print(df_a)
-    df_a.to_csv('ma_ema.csv')
+    df.to_csv('data.csv')
 

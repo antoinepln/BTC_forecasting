@@ -8,7 +8,7 @@ from tensorflow.keras import regularizers
 
 
 def wavelet_transform(df):
-    ca , cb, cc , cd = pywt.wavedec(df['price'].values, 'haar', level = 3)
+    ca , cb, cc , cd = pywt.wavedec(df.values, 'haar', level = 3)
     cat = pywt.threshold(ca, np.std(ca), mode = 'soft')
     cbt = pywt.threshold(cb, np.std(cb), mode = 'soft')
     cct = pywt.threshold(cc, np.std(cc), mode = 'soft')
@@ -50,9 +50,9 @@ def autoencoder(features):
     autoencoder.compile(loss = 'mse', optimizer = 'rmsprop',metrics = ['mae'])
     return autoencoder , encoder
 
-def init_model(length, n_days) :
+def init_model(length, n_days, features) :
     model = Sequential()
-    model.add(LSTM(150,activation = 'tanh',input_shape=(length, 14),return_sequences = True))
+    model.add(LSTM(150,activation = 'tanh',input_shape=(length, features),return_sequences = True))
     model.add(Dropout(0.5))
     model.add(Bidirectional(LSTM(120, activation = 'tanh',return_sequences=True)))
     model.add(Dropout(0.5))
@@ -83,9 +83,13 @@ def plot_loss(history):
     plt.legend(['Train', 'Validation'], loc='best')
     plt.show()
 
-def get_prediction(df_test,length, period_test , autoencoder, model):
+def get_prediction(df_test,length, period_test , autoencoder, model,scaler):
     df_test_n = df_test.copy()
-    df_test_n['price'] = wavelet_transform(df_test_n)[:len(df_test_n)]
+
+    for x in df_test_n.columns :
+            df_test_n[x] = wavelet_transform(df_test_n[x])[:len(df_test_n)]
+
+    df_test_n[df_test_n.columns]  = scaler.transform(df_test_n)
 
     df_test = df_test[length:]
 

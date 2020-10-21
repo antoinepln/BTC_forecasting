@@ -1,5 +1,6 @@
 from utility_function import wavelet_transform, get_sample,get_X_y, autoencoder, init_model, plot_loss
 from utility_function import get_prediction, get_performance
+from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 import numpy as np
 from tensorflow.keras.callbacks import EarlyStopping
@@ -12,14 +13,24 @@ class Trainer() :
         self.length = length
         self.df = df
         self.df_test = df_test
+        self.features = len(df.columns)
 
 
     def train(self):
         df = self.df
 
-        self.autoencoder, self.encoder = autoencoder(14)
+        for x in df.columns :
+            df[x] = wavelet_transform(df[x])
+
+
+        self.scaler = MinMaxScaler()
+        self.scaler.fit(df)
+        df[df.columns]  = self.scaler.transform(df)
+
+
+        self.autoencoder, self.encoder = autoencoder(self.features)
         X = np.array(df)
-        X = X.reshape(len(X), 1, 14)
+        X = X.reshape(len(X), 1, self.features)
 
         es = EarlyStopping(monitor = 'val_loss',mode = 'min' , verbose = 1, patience = 20, restore_best_weights = True)
         self.autoencoder.fit(X,X,
@@ -41,7 +52,7 @@ class Trainer() :
         length_of_sequences = [self.length for x in range(820)]
         X_train, y_train = get_X_y(new_df, self.n_days, length_of_sequences)
 
-        self.model = init_model(self.length, self.n_days)
+        self.model = init_model(self.length, self.n_days, self.features)
 
         self.history = self.model.fit(np.array(X_train), np.array(y_train),
                     validation_split = 0.3,
@@ -59,7 +70,7 @@ class Trainer() :
 
     def get_prediction(self) :
         self.train()
-        self.prediction = get_prediction(self.df_test,self.length, 90, self.autoencoder, self.model)
+        self.prediction = get_prediction(self.df_test,self.length, 90, self.autoencoder, self.model, self.scaler)
 
 
     def get_perf(self) :
@@ -81,7 +92,7 @@ if __name__ == '__main__':
     return_trim = {}
     return_hold = {}
     detail_perf = {}
-    for x in range(30) :
+    for x in range(31) :
         detail = []
         if x == 0 :
             df_test = df[820-length:910]
@@ -107,7 +118,7 @@ if __name__ == '__main__':
             df_ = df[s:n]
             t = Trainer(df_, df_test, 1, 5)
             t.get_perf()
-            return_trim['x'] = t.perf
+            return_trim[x] = t.perf
 
             return_hold[x] = t.hold
 

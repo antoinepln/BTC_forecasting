@@ -106,7 +106,7 @@ def get_prediction(df_test,length, period_test , autoencoder, model,scaler):
     return prediction
 
 def get_performance(df_test, prediction):
-        df_perf = df_test[['price']]
+        df_perf = df_test[['close']]
         df_perf['prediction'] = prediction
         df_perf.columns  = ['true', 'prediction']
 

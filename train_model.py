@@ -46,7 +46,7 @@ class Trainer() :
         X_encode.shape = (X_encode.shape[0], X_encode.shape[2])
         new_df = pd.DataFrame(X_encode)
         df.reset_index(inplace = True)
-        new_df['price'] = df['price']
+        new_df['price'] = df['close']
 
 
         length_of_sequences = [self.length for x in range(820)]
@@ -85,7 +85,7 @@ class Trainer() :
 if __name__ == '__main__':
     n_days = 1
     length = 5
-    df  = pd.read_csv('ma_ema.csv').set_index('date').dropna()
+    df  = pd.read_csv('data.csv').set_index('date').dropna()
     #ipdb.set_trace()
     n = 820
     s = 0

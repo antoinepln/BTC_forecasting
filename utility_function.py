@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.layers import Dense , Input , LSTM, Bidirectional, Dropout
 from tensorflow.keras.models import Model , Sequential
 from tensorflow.keras import regularizers
+import ipdb
 
 
 def wavelet_transform(df):
@@ -16,29 +17,54 @@ def wavelet_transform(df):
     coeff = [cat , cbt, cct , cdt]
     return pywt.waverec(coeff, 'haar')
 
-def get_sample(df, length, temporal_horizon):
+def get_sample(df, length, temporal_horizon, style):
 
     temporal_horizon = temporal_horizon - 1
     last_possible = df.shape[0] - temporal_horizon - length
     random_start = np.random.randint(1, last_possible)
-    X_sample = df.drop(columns = 'price').iloc[random_start: random_start+length].values
-    y_sample = df['price'].iloc[random_start+length: random_start+length+temporal_horizon+1].values
+    if style == "linear" :
+        X_sample = df.drop(columns = 'price').iloc[random_start: random_start+length].values
+        y_sample = df['price'].iloc[random_start+length: random_start+length+temporal_horizon+1].values
+        return X_sample, y_sample
+    if style == "clf" :
+        X_sample = df.drop(columns = 'up').iloc[random_start: random_start+length].values
+        y_sample = df['up'].iloc[random_start+length: random_start+length+temporal_horizon+1].values
+        return X_sample, y_sample
 
-   # if y_sample != y_sample:
-        #X_sample, y_sample = get_sample(df, length, temporal_horizon)
+def get_sample_2(df, length, temporal_horizon, style):
 
-    return X_sample, y_sample
+    temporal_horizon = temporal_horizon - 1
+    last_possible = df.shape[0] - temporal_horizon - length
+    random_start = np.random.randint(1, last_possible)
+    ipdb.set_trace()
+    if style == "linear" :
+        X_sample = df.iloc[random_start: random_start+length].values
+        y_sample = df['close'].iloc[random_start+length: random_start+length+temporal_horizon+1].values
+        return X_sample, y_sample
+    if style == "clf" :
+        X_sample = df.iloc[random_start: random_start+length].values
+        y_sample = df['up'].iloc[random_start+length: random_start+length+temporal_horizon+1].values
+        return X_sample, y_sample
 
-def get_X_y(df, temporal_horizon, length_of_sequences):
+def get_X_y(df, temporal_horizon, length_of_sequences, style):
     X, y = [], []
 
     for len_ in length_of_sequences:
-        xi, yi = get_sample(df, len_, temporal_horizon)
+        xi, yi = get_sample(df, len_, temporal_horizon, style)
         X.append(xi)
         y.append(yi)
 
     return X, y
 
+def get_X_y_2(df, temporal_horizon, length_of_sequences, style):
+    X, y = [], []
+
+    for len_ in length_of_sequences:
+        xi, yi = get_sample_2(df, len_, temporal_horizon, style)
+        X.append(xi)
+        y.append(yi)
+
+    return X, y
 
 def autoencoder(features):
     input_data = Input(shape=(1, features))
@@ -50,7 +76,7 @@ def autoencoder(features):
     autoencoder.compile(loss = 'mse', optimizer = 'rmsprop',metrics = ['mae'])
     return autoencoder , encoder
 
-def init_model(length, n_days, features) :
+def init_model(length, n_days, features, style) :
     model = Sequential()
     model.add(LSTM(150,activation = 'tanh',input_shape=(length, features),return_sequences = True))
     model.add(Dropout(0.5))
@@ -60,11 +86,18 @@ def init_model(length, n_days, features) :
     model.add(Dropout(0.5))
     model.add(LSTM(80,activation = 'tanh'))
     model.add(Dense(60,activation = 'relu'))
-    model.add(Dense(n_days,activation = 'linear'))
 
-    model.compile(loss = 'mse', optimizer = 'rmsprop',metrics = ['mae'])
+    if style == 'linear' :
+        model.add(Dense(n_days,activation = 'linear'))
+
+        model.compile(loss = 'mse', optimizer = 'rmsprop',metrics = ['mae'])
+    if style == 'clf':
+        model.add(Dense(n_days,activation = 'sigmoid'))
+
+        model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     return model
+
 
 def plot_loss(history):
     plt.plot(history.history['loss'])
@@ -105,6 +138,30 @@ def get_prediction(df_test,length, period_test , autoencoder, model,scaler):
 
     return prediction
 
+
+def get_prediction_2(df_test,length, period_test , model,scaler):
+    df_test_n = df_test.copy()
+
+    for x in df_test_n.columns :
+            df_test_n[x] = wavelet_transform(df_test_n[x])[:len(df_test_n)]
+
+    df_test_n[df_test_n.columns]  = scaler.transform(df_test_n)
+
+    df_test = df_test[length:]
+
+    prediction = []
+    for x in range(len(df_test)):
+        y = df_test_n[x:x+length].values
+        y.shape = (1, y.shape[0], y.shape[1])
+        predict = model.predict(y)
+        prediction.append(predict)
+
+    prediction = np.array(prediction)
+    prediction.shape = (period_test)
+
+    return prediction
+
+
 def get_performance(df_test, prediction):
         df_perf = df_test[['close']]
         df_perf['prediction'] = prediction
@@ -144,11 +201,44 @@ def get_performance(df_test, prediction):
         df_perf['hold'] = hold
 
 
-        perf_min = df_perf['perf'].min()
+        perf_min = df_perf['perf'].iloc[1:].min()
         perf_max = df_perf['perf'].max()
 
-        nb_long = df_perf[df_perf['long'] == 1].count()
+        nb_long = float(df_perf['long'][df_perf['long'] == 1].count())
 
-        nb_up = df_perf[df_perf['up'] == 1].count()
+        nb_up = float(df_perf['up'][df_perf['up'] == 1].count())
 
         return df_perf['perf'].iloc[1:].prod() ,df_perf['hold'].iloc[1:].prod(), perf_min , perf_max , nb_long, nb_up
+
+
+def get_performance_2(df_test, prediction):
+        df_perf = df_test[['close']]
+        df_perf['prediction'] = prediction
+        df_perf.columns  = ['true', 'prediction']
+
+
+        perf = [0]
+        for i in range(1,len(df_perf)):
+            if df_perf['prediction'].iloc[i] == 1 :
+                x = (df_perf['true'].iloc[i] - df_perf['true'].iloc[i-1]) / df_perf['true'].iloc[i-1]
+                perf.append(1 + x)
+            else :
+                x = (df_perf['true'].iloc[i-1] - df_perf['true'].iloc[i]) / df_perf['true'].iloc[i-1]
+                perf.append(1 + x)
+        df_perf['perf'] = perf
+
+        hold = [0]
+        for i in range(1,len(df_perf)):
+                x = (df_perf['true'].iloc[i] - df_perf['true'].iloc[i-1]) / df_perf['true'].iloc[i-1]
+                hold.append(1 + x)
+        df_perf['hold'] = hold
+
+
+        perf_min = df_perf['perf'].iloc[1:].min()
+        perf_max = df_perf['perf'].max()
+
+        #nb_long = float(df_perf['long'][df_perf['long'] == 1].count())
+
+        #nb_up = float(df_perf['up'][df_perf['up'] == 1].count())
+
+        return df_perf['perf'].iloc[1:].prod() ,df_perf['hold'].iloc[1:].prod(), perf_min , perf_max

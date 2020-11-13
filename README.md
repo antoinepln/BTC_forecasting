@@ -92,7 +92,7 @@ According to this implementation we get an exponent hurst of 0.64. This is in li
 
 To close this section we will calculate the autocorrelation coefficient of time lag equal to 100 days for 10 randomly chosen sequences. This will give us a new opportunity to observe how the dependence between past price levels and new price levels that follow them behaves. It will also help us to choose the time depth we will use to feed our neural networks. If I use the closing price of the last 5 days to predict the closing price of the next day, I have a time depth equal to 5, for a time horizon equal to 1, if I had chosen to use the closing price of the last 10 days, my time depth would be equal to 10.
 
-<img src= "test.png" />
+<img src= "image/acp.png" />
 
 Logically when lag t = 0, the autocorrelation is equal to 1, it then gradually decreases, which is also logical. It is reasonable to assume that the price at closing t = 0 is positively correlated to the previous closing, this positive correlation is higher than the whole sample. We observe that at t = 20 either the positive autocorrelation is always significant, or we are in a peak of negative correlation. This pattern is repeated several times. Most of the time at t = 50, there is a last peak of correlation, often negative, before the correlation converges around 0. It is therefore thought that there is no point in testing temporal depths greater than 50 (small area around 70 observed but not large enough to take the time to cover it in this work). We will therefore try to feed our model with temporal depths, 5, 10, 20, 50.
 
@@ -130,57 +130,16 @@ The SP500 daily price history was obtained via the DataReader of the python libr
 
 This gives us the following features:
 
-| Hash\_rate |
-| --- |
-| Transactions\_count |
-| Utxo Spent |
-| Fees\_total |
-| sp |
-
-| MVRV\_Z |
-| --- |
-| NVTS |
-| Pct\_profit |
-| Supp\_last\_act |
-| Transact\_sec |
-
-| New\_adress |
-| --- |
-| Active\_adress |
-| SOPR |
-| Comp\_ribbon |
-| utxo |
+<img src= "image/tableau_features.png" />
 
 This represents a first sample of features, which we then test by calculating Spearman&#39;s correlation between the variation of each of these indicators and the variation of prices. The Spearman coefficient is used rather than the more widely used Pearson correlation in order to detect non-affine correlations.
 
-_Spearman&#39;s correlation :_
+<img src= "image/correlation.png" />
 
-![](RackMultipart20201113-4-wpmvsu_html_cc544dd38423341.gif)
+<img src= "image/heatmap_correlation.png" />
 
-_Correlation Heatmap :_
 
-| New\_adress | 0.92268 |
-| --- | --- |
-| Active\_adress | 0.93591 |
-| SOPR | -0.0218 |
-| Comp\_ribbon | -0.3140 |
-| utxo | 0.90355 |
-
-| MVRV\_Z | 0.13077 |
-| --- | --- |
-| NVTS | 0.13077 |
-| Pct\_profit | 0.03021 |
-| Supp\_last\_act | 0.34538 |
-| Transact\_sec | 0.89880 |
-
-| Hash\_rate | 0.94882 |
-| --- | --- |
-| Transactions\_count | 0.89880 |
-| Utxo\_spent | 0.91461 |
-| Fees\_total | 0.59172 |
-| Sp | 0.00969 |
-
-![](RackMultipart20201113-4-wpmvsu_html_4eb256f1b6f7c7f9.png)To begin with, we keep all the indicators that have a correlation higher than 0.8 over the whole period.
+To begin with, we keep all the indicators that have a correlation higher than 0.8 over the whole period.
 
 Moreover when we vary the periods we find interesting results for mvrv\_z, nvts, and pct\_profit, for example period (2016-03-09 - 2017-07-22) :
 
@@ -206,9 +165,7 @@ We thus obtain the list of technical data that we will use as input for our mode
 
 As mentioned above, the evolution of prices is punctuated by major upward cycles. This implies much higher local highs, and orders of magnitude clearly different according to the periods, even relatively close. We thus perform a logarithmic transformation for our indicators, which are not bounded. Our multiplicative series becomes additive. This transformation does not replace the scaling that will be done later. It does not serve as a denoising that we will try to add to our models later.
 
-![](RackMultipart20201113-4-wpmvsu_html_8272101cf4669887.png) ![](RackMultipart20201113-4-wpmvsu_html_4640995b941bc705.png)
-
-_On the left, historical bitcoin prices before logarithmic transformation, on the right the same prices after logarithmic transformation.._
+<img src= "image/log_transfo.png" />
 
 ### Scaling
 
@@ -232,13 +189,7 @@ This gives us 12 training sets of 730 periods, for 12 corresponding test sets of
 
 For the 2 years training this gives us 12 training sets of 1095 periods, for 12 corresponding test sets of 90 periods.
 
-![](RackMultipart20201113-4-wpmvsu_html_e7205d1ad5217fbb.png) ![](RackMultipart20201113-4-wpmvsu_html_691cdb4ef24471e0.png)
-
-![](RackMultipart20201113-4-wpmvsu_html_7a7504fe65a6472e.gif) ![](RackMultipart20201113-4-wpmvsu_html_7a7504fe65a6472e.gif)
-
-Learning of 3 years
-
-Learning of 2 years
+<img src= "image/learning_archi.png" />
 
 We started by performing split validation of 0.2 for the training set, adding an early\_stopping to our model that stopped learning our models when the accuracy of the validation set did not increase for 15 periods. However, we made the decision not to work like that anymore. The final goal of our research is to maximize the gains associated with these prediction models, accuracy is only an intermediate metric as important as it is. In many cases accuracy may not increase or even decrease, but our networks may be learning the patterns preceding the most important movements. In a small proportion of periods we find the majority of price movements. An accuracy of 30% may not be able to detect minor movements but will predict with conviction the periods representing 90% of the variance of a quarter.
 
@@ -274,7 +225,7 @@ Several activation functions are available for each layer of neurons, we will pr
 
 Diagram of a neuron layer, each neuron fully connected:
 
-![](RackMultipart20201113-4-wpmvsu_html_346b27b2cea4f6a2.png)
+<img src= "image/dnn_archi.png" />
 
 Our DNN will be composed of an input layer where the number of neurons will be equal to the temporal depth multiplied by the number of features. This number of neurons corresponds to the number of input features in our network.
 
@@ -282,9 +233,7 @@ After varying the number of hidden layers between 1 and 5, it turns out that a n
 
 Two learning curves on 500 epochs, on the left that of a DNN with 1 hidden layer, on the right that of a DNN with 3 hidden layers :
 
-_(Batch\_size = 64, shuffle = Tr_ue)
-
-![](RackMultipart20201113-4-wpmvsu_html_6e934b80adc85f69.png) ![](RackMultipart20201113-4-wpmvsu_html_c9c904ca0592f2c6.png)
+<img src= "image/learning_curve.png" />
 
 For our input and hidden layers we use the Relu activation function, Rectified Linear Unit ; f(x) = max(0,x).
 
@@ -292,9 +241,7 @@ It solves the problem of vanishing gradient descent, thanks to its linear behavi
 
 We then add our output layer to a connected neuron, to the outputs of the x/2 neurons of the previous layer. The activation function of this neuron will be Sigmoid and will limit our result between 0 and 1, representing the probability that the output of the model is equal to 1 (prices goes up).
 
-Summary of our Deep Neural Network
-
-![](RackMultipart20201113-4-wpmvsu_html_28b355dd5a145131.png)
+<img src= "image/summ_dnn.png" />
 
 To converge our networks towards the optimal solution, we use the extension of the stochastic gradient descent, ADAM (adaptive moment estimation). Introduced in 2015, by Diederik Kingma and Jimmy Ba, this allows us to have an efficient learning rate for non-stationary problems with a lot of noise like ours. The Optimizer will be used with the default values of the Keras library, ((lr=0.001, beta\_1=0.9, beta\_2=0.999, epsilon=1e-08, decay=0.0).
 
@@ -302,9 +249,7 @@ To converge our networks towards the optimal solution, we use the extension of t
 
 A sub-category of neural networks is the Recurent Neural Network, these networks have the particularity of including temporality in their calculations.
 
-Recurent Neural Network :
-
-![](RackMultipart20201113-4-wpmvsu_html_484755fa61601378.png)
+<img src= "image/rnn_schem.png" />
 
 We have xt the input at time t, ht the hidden state at time t, and yt the output at time t. Thus a neural network recurent, not only uses an input x but also the hidden state at time t-1, to compute the hidden state at time t and then output y.
 
@@ -312,9 +257,7 @@ Let&#39;s imagine that we use a temporal depth of 5, the output of the model wil
 
 Y = 𝑤y\* h5+𝑏y , where h5 is the hidden state at time t = 5 and 𝑤y and 𝑏y are weights to be learned .
 
-_Scheme of an RNN :_
-
-![](RackMultipart20201113-4-wpmvsu_html_a2f136fe10fab52b.png)
+<img src= "image/rnn_neuron.png" />
 
 In our research we will use a particular model of RNN, the LSTM neurons. The problem of basic RNNs such as LSTM and GRU are a Vanishing Gradient problem. For long series, the stochastic gradient tends towards 0, and thus prevents the model from converging towards the global minimum. A Long Short Term Memory neuron compensates with a memory cell composed of a forget gate f i , an input gate i i , and an output gate o i at time step i .
 
@@ -332,17 +275,13 @@ _ct_ = _ft_ ⊙_ct_−1 + _it_ ⊙_gt
 
 xt is the input vector, ft, it, ot, are the forget, input, and output gates, gt the activation input, ct the cell state vector, ht output vector of the LSTM unit.
 
-The architecture of an Lstm neuron is presented below :
-
-![](RackMultipart20201113-4-wpmvsu_html_3dab323155f889e2.png)
+<img src= "image/lstm_neuron.png" />
 
 Our input layer will be composed of a layer of n neurons, which corresponds to the n features of our inputs. Our input x will be a vector of the shape (n, time depth,), so each timestep will be processed independently by the network.
 
 Following the same approach as for DNN, we test configurations between 1 and 5 hidden layers. We observe that a model with one hidden layer learns very well, and that adding layers does not seem to induce a better learning, on the contrary . Our model will therefore be composed of one hidden layer. In order to avoid or at least to limit overfitting, i.e., that our model learns too specifically movements that are specific to our training set, we add a dropout layer after our hidden layer. This layer will be followed by the output neuron, with sigmoid activation function.
 
-_network summary :_
-
-![](RackMultipart20201113-4-wpmvsu_html_8fd4b5338e696f5d.png)
+<img src= "image/sum_lstm.png" />
 
 # Result
 
@@ -358,13 +297,13 @@ We will start by comparing the two models independently. We will identify the mo
 
 12-Quarter Cumulative Returns:
 
-![](RackMultipart20201113-4-wpmvsu_html_61502d061daeef32.png) ![](RackMultipart20201113-4-wpmvsu_html_7c597f824ea08505.png)
+<img src= "image/dnn_cum.png" />
 
 We can see that apart from our model of depth 10, for a 3-year learning, all these models outperform a simple buy and hold strategy and a logistic regression according to the previous day. All patterns based on the predictions of a deep neural network with a time horizon of 1 are superior to the returns generated by random investment choices.
 
 Accuracy average of models over the 12 quarters :
 
-![](RackMultipart20201113-4-wpmvsu_html_91d15d3d2cfb9e9b.png) ![](RackMultipart20201113-4-wpmvsu_html_74483dc6293f1772.png)
+<img src= "image/dnn_acc.png" />
 
 All our accuracies are less than the accuracy of a holding strategy and a simple logistical regression. They are of the order of random generation. This suggests that everything that has been learned by our models is just overfitting, and past price movements have nothing to do with future price movements.
 
@@ -372,53 +311,57 @@ Thus, the correlation between the returns of our models and the accuracy over ou
 
 We realize this by observing the results by quarter, we do this for example for the model of time depth 5 and time horizon 1 :
 
-![](RackMultipart20201113-4-wpmvsu_html_b551c5c320190eee.png)
+<img src= "image/ex_dnn.png" />
 
 For 7 out of 12 periods, the Accuracy of our 3-year trained model is less than the accuracy of our 2-year trained model. For 8 out of 12 periods, the accuracy of the Random Model is higher than the accuracy of our 3-year trained Deep Neural Network. For 9 out of 12 periods, the accuracy of the logistic regression model is higher than the accuracy of our best performing model. The accuracy of our best performing model appears to be the lowest.
 
 Recall
 
-![](RackMultipart20201113-4-wpmvsu_html_332effdde21dde86.png) ![](RackMultipart20201113-4-wpmvsu_html_ed4b940869b735f1.png)
+<img src= "image/recall_dnn.png" />
 
 The recall rate goes up to 78.14% for a time depth of 5 trained on the prices of the last 2 years, this result is much higher than a random model and simple logistic regression. All these networks manage to predict a proportion of upward movements considerably higher than the randomly generated model. Knowing that it is very lucrative to position oneself in the direction of Bitcoin&#39;s major bull cycles, this seems to be a major advantage. However, the configurations with the highest recall rate are not necessarily the configurations with the highest rate of return.
 
 Specificity :
 
-![](RackMultipart20201113-4-wpmvsu_html_5742a22fb989b483.png) ![](RackMultipart20201113-4-wpmvsu_html_2b725e8e2abd1a7d.png)
+<img src= "image/spec_dnn.png" />
 
 The rate of specificity is lower than a random distribution, while being generally slightly higher than a simple logistic regression. The model predicts a higher proportion of upward movements than downward movements. There is a slight correlation between the rate of return and our specificity. These models would thus capture most of the upward movements that would respond to the profits of a hoding strategy, and the higher return would vary according to the configuration, depending on the proportion of price falls covered by the model.
 
 Does increasing the time horizon of the Deep Neural Network increase accuracy or returns?
 
-![](RackMultipart20201113-4-wpmvsu_html_3d669b42ff4e74e3.png)
+<img src= "image/horizon_dnn.png" />
 
 We can see that in the case of the Deep Neural Network, extending the time horizon to align with a more representative trend does not seem to work. Most of the models are below the total returns obtained when the model is fit on the next day. With particularly catastrophic results for a temporal depth of 50.
 
 ## LSTM
 
-Accumulated return over the 12 quarters : ![](RackMultipart20201113-4-wpmvsu_html_dc508a92392c55c2.png) ![](RackMultipart20201113-4-wpmvsu_html_7c597f824ea08505.png)
+Accumulated return over the 12 quarters :
+
+<img src= "image/lstm_cum.png" />
 
 Regardless of the configuration Lstm&#39;s networks seem to outperform a purchasing strategy in the majority of cases. We observe very encouraging performances, notably for a time depth of 10 trained over 3 years which achieves 304.45% return over the 3 years, or 141.66% of surplus generated compared to a passive strategy. The addition of temporal depth does not seem to improve our network, even if the LSTM neurons are adapted to long time series.
 
-We observe the returns by quarters for the 2 best performing configurations: ![](RackMultipart20201113-4-wpmvsu_html_b6fca0d04b617225.png)
+We observe the returns by quarters for the 2 best performing configurations:
+
+<img src= "image/lstm_ex.png" />
 
 The distribution of revenues across the periods is very similar for our two high-performance models. These returns also tend to be correlated with the returns of a holding strategy. This comes from the fact that our LSTM networks tend to be more bullish than bearish like our DNN networks. When prices increase, our strategy performs similarly to a passive strategy. However, when prices fall, our strategy limits losses considerably. The major losses are made in quarters 3 and 5, during these quarters the prices fall respectively by 23.63% and 45.28%, while the strategy for the 5-1-2y model records losses of 6.83% and 20.33%.
 
 ACCURACY
 
-![](RackMultipart20201113-4-wpmvsu_html_9d42f63a9788a65c.png) ![](RackMultipart20201113-4-wpmvsu_html_74483dc6293f1772.png)
+<img src= "image/lstm_acc.png" />
 
 An accuracy that confirms what we saw earlier, with no statistically significant difference between the models and with a randomized model for this measure.
 
 RECALL
 
-![](RackMultipart20201113-4-wpmvsu_html_56e68dfc906eb8d8.png) ![](RackMultipart20201113-4-wpmvsu_html_ed4b940869b735f1.png)
+<img src= "image/lstm_recall.png" />
 
 As with our DNN Networks, there is a statistically significant difference between our recall score and that for a random generation.
 
 SPECIFICITY
 
-![](RackMultipart20201113-4-wpmvsu_html_3a9121ace02eb82f.png) ![](RackMultipart20201113-4-wpmvsu_html_2b725e8e2abd1a7d.png)
+<img src= "image/lstm_spe.png" />
 
 We confirm what we mentioned above and that we had already abstained with our previous models. The specificity score is lower and our models tend to be bullish. Our models have a bullish bias that could play tricks on us when prices fall.
 
@@ -426,45 +369,14 @@ Does Extending the Time Horizon work for Our Long-Short-Term-memory Network?
 
 We see that when we increase the time horizon to 7 periods it decreases the results. This superforms a purchasing strategy only for a time depth of 5, the returns are very low for a large time depth despite LSTM networks that are made for this.
 
-![](RackMultipart20201113-4-wpmvsu_html_5511dda968c3f14d.png) ![](RackMultipart20201113-4-wpmvsu_html_7c597f824ea08505.png)
+<img src= "image/horizon_lstm.png" />
 
-![](RackMultipart20201113-4-wpmvsu_html_466f977587cc59b8.gif) ![](RackMultipart20201113-4-wpmvsu_html_325ce02a277ba100.gif)
 
-Best Lstm
-
-Time depth = 10
-
-Time Horizon = 1
-
-Learning years = 3 years
-
-304.46% cumulative return
-
-62.03% of upward movements
-
-38.86% of downward movements
-
-Best DNN
-
-time depth = 50
-
-time horizon = 1
-
-learning years = 2 years
-
-cumulative returns of 237.08%.
-
-59.59 % of upward movements
-
-42.08% of downward movements.
+<img src= "image/best_model.png" />
 
 Even if some models do not have a very strong cumulative performance, it may perform well in some quarters. The best-performing models do not necessarily perform well in all periods. We have therefore observed which models are the best performers in each period:
 
-![](RackMultipart20201113-4-wpmvsu_html_45eb1e13ddfbdaff.gif)
-
-Over all periods, the 7-period horizon models perform less well, but they perform very well in some quarters. It could be very judicious for the future to make an analogy of the curves preceding the quarters, so as to train the most efficient models for this kind of arrangement. Limiting our Input to limited oscillators could help this giving similar images at different periods. This process would almost correspond to nesting a selection model to know which model to use, but it could increase yields exponentially. For information, the cumulative yield of all the best periods over these 3 years is 1500.81%.
-
-![](RackMultipart20201113-4-wpmvsu_html_81ad63b8fe7f8bc6.png) ![](RackMultipart20201113-4-wpmvsu_html_eb07b0d94e60e9f7.png)
+<img src= "image/best_period.png" />
 
 The results clearly show us that using past prices to predict future prices can yield additional returns. In both cases, the Strategies have returns that are far superior to a strategy of random buying. Thus, neural models are able to extract information from past prices that allows them to predict a large proportion of upward movements while still predicting some downward movements. We deduce from this the existence of certain market inefficiencies for the prices of Bitcoin. In the rest of this paper, we will try to optimize our most efficient network, based on a model already implemented on the traditional markets. [2] [3].
 
@@ -490,13 +402,13 @@ Wavelet Tranform is a signal extraction method, very similar to the famous Fourr
 
 There are several types of Wavelets, we use Haar as a basic function for our implementation [2]. We choose a Discrete Wavelet Transformation rather than a Continuous Transformation Wavelet, the sampling of the DWT is a way to avoid the redundancy of the CWT [2].
 
-_Schéma de notre tranformation :_
+_ tranformation Scheme :_
 
-![](RackMultipart20201113-4-wpmvsu_html_d60578d4130fb2a1.png)
+ <img src= "image/wav.png" />
 
 In the figure, H, L and H &#39;, L&#39; are the high-pass and low-pass filters for wavelet decomposition and reconstruction respectively. In the decomposition phase, the low-pass filter removes the higher frequency components of the signal and the high-pass filter captures the remaining parts. Then, the filtered signals are subsampled by two and the results are called approximation coefficients and detail coefficients. Reconstruction is just an inverse process of decomposition and for a perfect reconstruction of the filter banks we have x = x &#39;. We choose to apply the transformation on all our features .
 
-## PCA
+## QDA
 
 After this price transformation we can go even further to give the best possible information to our network. We will implement the 2 following methods:
 
@@ -504,19 +416,19 @@ After this price transformation we can go even further to give the best possible
 
 - Autoencoder [2], a hidden 3-layer neural network that is supposed to remove noise and extract the essential information present in our features. The input of our neural network will be n features and the output will be n new features. Our trained X and our target are the same for our autoencoder, these are the features.
 
-Summary of our Autoencoder :
-
-![](RackMultipart20201113-4-wpmvsu_html_df07c0e8f20d924e.png)
+<img src= "image/encoder_network.png" />
 
 ##
 
 # Result
 
-Our new Benchmarck will therefore be the results of our best model: ![](RackMultipart20201113-4-wpmvsu_html_c6803ce5a9b72f93.png)
+Our new Benchmarck will therefore be the results of our best model:
+
+<img src= "image/new_bench.png" />
 
 Results of Wavelet Transform :
 
-![](RackMultipart20201113-4-wpmvsu_html_d78594beaa89f4a6.png)
+<img src= "image/wav_res.png" />
 
 Although for a few quarters the performance is better when de-noising features to models, the performance of our base model seems to be better. We obtain a total profitability of 180.56%, with the implementation of a wavelet transform. This represents a loss of 123.89% compared to our benchmark. Even if this performance remains superior to a passive strategy, this loss of profitability leads us to believe that the denoising of features makes us lose too much information on their movements. We won&#39;t cover this in this research but it would be interesting to denoise the features one by one and observe the result. Except for periods 6 and 7, the recall is lower than the benchmark. It seems that feature denoising mostly causes less frequent accurate upside predictions, which is what gives our models their strength.
 
@@ -526,15 +438,15 @@ These combined procedures seem to lead to an even greater loss of information.
 
 AutoEncoder :
 
-![](RackMultipart20201113-4-wpmvsu_html_fc91a66e7b3f62cc.png)
+<img src= "image/autoencoder_res.png" />
 
 The results are similar with, but lower, large yield variances over the first two quarters, resulting in returns of 202.81% for our network with encoder, or 101.54% less than for our network without encoder.
 
 Even if the efficiency is slightly higher in some quarters, these results lead us to believe that encoding our features does not add any additional value to the inputs of our network.
 
-PCA :
+QDA :
 
-![](RackMultipart20201113-4-wpmvsu_html_c72356d4d8dfef80.png)
+<img src= "image/qda_res.png" />
 
 With a Total Efficiency of 166.51%, we come to the same conclusion as for encoding or Wavelet Transformation, these processes remove important information for the prediction of future movements.
 

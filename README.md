@@ -92,7 +92,7 @@ According to this implementation we get an exponent hurst of 0.64. This is in li
 
 To close this section we will calculate the autocorrelation coefficient of time lag equal to 100 days for 10 randomly chosen sequences. This will give us a new opportunity to observe how the dependence between past price levels and new price levels that follow them behaves. It will also help us to choose the time depth we will use to feed our neural networks. If I use the closing price of the last 5 days to predict the closing price of the next day, I have a time depth equal to 5, for a time horizon equal to 1, if I had chosen to use the closing price of the last 10 days, my time depth would be equal to 10.
 
-<img src= "test.jpg" />
+<img src= "test.png" />
 
 Logically when lag t = 0, the autocorrelation is equal to 1, it then gradually decreases, which is also logical. It is reasonable to assume that the price at closing t = 0 is positively correlated to the previous closing, this positive correlation is higher than the whole sample. We observe that at t = 20 either the positive autocorrelation is always significant, or we are in a peak of negative correlation. This pattern is repeated several times. Most of the time at t = 50, there is a last peak of correlation, often negative, before the correlation converges around 0. It is therefore thought that there is no point in testing temporal depths greater than 50 (small area around 70 observed but not large enough to take the time to cover it in this work). We will therefore try to feed our model with temporal depths, 5, 10, 20, 50.
 

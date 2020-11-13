@@ -5,40 +5,54 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.layers import Dense , Input , LSTM, Bidirectional, Dropout
 from tensorflow.keras.models import Model , Sequential
 from tensorflow.keras import regularizers
+from sklearn.metrics import accuracy_score, confusion_matrix
+import ipdb
 
 
-def wavelet_transform(df):
-    ca , cb, cc , cd = pywt.wavedec(df.values, 'haar', level = 3)
-    cat = pywt.threshold(ca, np.std(ca), mode = 'soft')
-    cbt = pywt.threshold(cb, np.std(cb), mode = 'soft')
-    cct = pywt.threshold(cc, np.std(cc), mode = 'soft')
-    cdt = pywt.threshold(cd, np.std(cd), mode = 'soft')
-    coeff = [cat , cbt, cct , cdt]
-    return pywt.waverec(coeff, 'haar')
 
-def get_sample(df, length, temporal_horizon):
+def get_sample(df, length, temporal_horizon, style, start):
 
     temporal_horizon = temporal_horizon - 1
     last_possible = df.shape[0] - temporal_horizon - length
-    random_start = np.random.randint(1, last_possible)
-    X_sample = df.drop(columns = 'price').iloc[random_start: random_start+length].values
-    y_sample = df['price'].iloc[random_start+length: random_start+length+temporal_horizon+1].values
 
-   # if y_sample != y_sample:
-        #X_sample, y_sample = get_sample(df, length, temporal_horizon)
+    if style == "linear" :
+        X_sample = df.drop(columns = 'price').iloc[start: start+length].values
+        y_sample = df['price'].iloc[start+length: start+length+temporal_horizon+1].values
+        return X_sample, y_sample
+    if style == "clf" :
+        X_sample = df.drop(columns = 'up').iloc[start: start+length].values
+        y_sample = df['up'].iloc[start+length+temporal_horizon-1: start+length+temporal_horizon].values
+        return X_sample, y_sample
 
-    return X_sample, y_sample
 
-def get_X_y(df, temporal_horizon, length_of_sequences):
+def get_X_y(df, temporal_horizon, length, style):
     X, y = [], []
 
-    for len_ in length_of_sequences:
-        xi, yi = get_sample(df, len_, temporal_horizon)
+    for len_ in range(len(df)-temporal_horizon -length):
+        xi, yi = get_sample(df, length, temporal_horizon, style , len_)
         X.append(xi)
         y.append(yi)
 
     return X, y
 
+
+
+def get_X_y_DNN(df, temporal_horizon, length, style):
+    X, y = [], []
+
+    for len_ in range(len(df)-temporal_horizon -length):
+        xi, yi = get_sample(df, length, temporal_horizon, style , len_)
+        X.append(xi.ravel())
+        y.append(yi.ravel())
+
+    return X, y
+
+def wavelet_transform(df):
+    ca , cb = pywt.wavedec(df.values, 'haar', level = 1)
+    cat = pywt.threshold(ca, np.std(ca), mode = 'soft')
+    cbt = pywt.threshold(cb, np.std(cb), mode = 'soft')
+    coeff = [cat , cbt ]
+    return pywt.waverec(coeff, 'haar')
 
 def autoencoder(features):
     input_data = Input(shape=(1, features))
@@ -48,23 +62,40 @@ def autoencoder(features):
     autoencoder = Model(inputs=input_data, outputs=decoded)
     encoder = Model(input_data, one_l)
     autoencoder.compile(loss = 'mse', optimizer = 'rmsprop',metrics = ['mae'])
-    return autoencoder , encoder
+    return autoencoder
 
-def init_model(length, n_days, features) :
+
+def lstm_model(length, n_days, features, style) :
     model = Sequential()
-    model.add(LSTM(150,activation = 'tanh',input_shape=(length, features),return_sequences = True))
-    model.add(Dropout(0.5))
-    model.add(Bidirectional(LSTM(120, activation = 'tanh',return_sequences=True)))
-    model.add(Dropout(0.5))
-    model.add(Bidirectional(LSTM(100,activation = 'tanh',return_sequences = True)))
-    model.add(Dropout(0.5))
-    model.add(LSTM(80,activation = 'tanh'))
-    model.add(Dense(60,activation = 'relu'))
-    model.add(Dense(n_days,activation = 'linear'))
+    model.add(LSTM(features,activation = 'tanh',input_shape=(length, features),return_sequences = True))
+    model.add(Bidirectional(LSTM(features/2,activation = 'tanh')))
+    model.add(Dropout(0.2))
 
-    model.compile(loss = 'mse', optimizer = 'rmsprop',metrics = ['mae'])
+    if style == 'linear' :
+        model.add(Dense(n_days,activation = 'linear'))
+
+        model.compile(loss = 'mse', optimizer = 'rmsprop',metrics = ['mae'])
+    if style == 'clf':
+        model.add(Dense(1,activation = 'sigmoid'))
+
+        model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     return model
+
+
+def DNN_model(length, n_days, features) :
+    nb = length * features
+    model = Sequential()
+    model.add(Dense(nb,activation = 'relu',input_dim=(nb)))
+    model.add(Dense(nb/2,activation = 'relu'))
+    model.add(Dense(nb/4,activation = 'relu'))
+    model.add(Dense(1,activation = 'sigmoid'))
+
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+    return model
+
+
 
 def plot_loss(history):
     plt.plot(history.history['loss'])
@@ -75,80 +106,83 @@ def plot_loss(history):
     plt.legend(['Train', 'Validation'], loc='best')
     plt.show()
 
-    plt.plot(history.history['mae'])
-    plt.plot(history.history['val_mae'])
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
     plt.title('Model loss')
     plt.ylabel('Mean Absolute Error')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'], loc='best')
     plt.show()
 
-def get_prediction(df_test,length, period_test , autoencoder, model,scaler):
-    df_test_n = df_test.copy()
-
-    for x in df_test_n.columns :
-            df_test_n[x] = wavelet_transform(df_test_n[x])[:len(df_test_n)]
-
-    df_test_n[df_test_n.columns]  = scaler.transform(df_test_n)
-
-    df_test = df_test[length:]
-
-    prediction = []
-    for x in range(len(df_test)):
-        encode = autoencoder.predict(df_test_n[x:x+length])
-        encode.shape = (1, encode.shape[0], encode.shape[1])
-        predict = model.predict(encode)
-        prediction.append(predict)
-
-    prediction = np.array(prediction)
-    prediction.shape = (period_test)
-
-    return prediction
-
-def get_performance(df_test, prediction):
-        df_perf = df_test[['close']]
-        df_perf['prediction'] = prediction
-        df_perf.columns  = ['true', 'prediction']
-
-        long = []
-        for i in range(len(df_perf)-1):
-            if df_perf['prediction'].iloc[i+1] > df_perf['prediction'].iloc[i] :
-                long.append(1)
-            else :
-                long.append(0)
-        long.append(0)
-        df_perf['long'] = long
-
-        up = [0]
-        for i in range(1,len(df_perf)):
-             if df_perf['true'].iloc[i] > df_perf['true'].iloc[i-1] :
-                up.append(1)
-             else :
-                up.append(0)
-        df_perf['up'] = up
-
-        perf = [0]
-        for i in range(1,len(df_perf)):
-            if df_perf['long'].iloc[i-1] == 1 :
-                x = (df_perf['true'].iloc[i] - df_perf['true'].iloc[i-1]) / df_perf['true'].iloc[i-1]
-                perf.append(1 + x)
-            else :
-                x = (df_perf['true'].iloc[i-1] - df_perf['true'].iloc[i]) / df_perf['true'].iloc[i-1]
-                perf.append(1 + x)
-        df_perf['perf'] = perf
-
-        hold = [0]
-        for i in range(1,len(df_perf)):
-                x = (df_perf['true'].iloc[i] - df_perf['true'].iloc[i-1]) / df_perf['true'].iloc[i-1]
-                hold.append(1 + x)
-        df_perf['hold'] = hold
 
 
-        perf_min = df_perf['perf'].min()
-        perf_max = df_perf['perf'].max()
+def get_accuracy_LSTM(df_test, df_true, model, length) :
+    pred = []
+    profit = 1
+    mini = 1
+    maxi = 1
+    df_true['close'] = df_true['close'].apply(lambda x : np.exp(x))
+    for x in range(len(df_test)-length):
+        y = df_test.drop(columns = 'up')[x:x+length].values
+        y.shape = (1, y.shape[0],y.shape[1])
+        predict = model.predict(y)
+        if predict > 0.5 :
+            pred.append(1)
+        else :
+            pred.append(0)
 
-        nb_long = df_perf[df_perf['long'] == 1].count()
+        if x != 0 :
+            if pred[x-1] == 1 :
 
-        nb_up = df_perf[df_perf['up'] == 1].count()
+                result = ((df_true['close'].iloc[x] - df_true['close'].iloc[x-1]) / df_true['close'].iloc[x-1]) + 1
+                profit = profit * result
+                if result < mini :
+                    mini = result
+                if maxi < result :
+                    maxi = result
 
-        return df_perf['perf'].iloc[1:].prod() ,df_perf['hold'].iloc[1:].prod(), perf_min , perf_max , nb_long, nb_up
+    accuracy = accuracy_score(df_test['up'][length:].values, np.array(pred).ravel())
+
+    tn, fp, fn, tp = confusion_matrix(df_test['up'][length:].values, np.array(pred).ravel()).ravel()
+
+    recall = tp/(tp+fn)
+    speci = tn/(tn+fp)
+
+    return accuracy, recall, speci, profit, mini, maxi
+
+def get_accuracy_DNN(df_test,df_true, model, length) :
+    pred = []
+    profit = 1
+    mini = 1
+    maxi = 1
+    df_true['close'] = df_true['close'].apply(lambda x : np.exp(x))
+    for x in range(len(df_test)-length):
+        y = df_test.drop(columns = 'up')[x:x+length].values.ravel()
+        y.shape = (1, y.shape[0])
+        predict = model.predict(y)
+        if predict > 0.3 :
+            pred.append(1)
+        else :
+            pred.append(0)
+
+        if x != 0 :
+            if pred[x-1] == 1 :
+
+                result = ((df_true['close'].iloc[x] - df_true['close'].iloc[x-1]) / df_true['close'].iloc[x-1]) + 1
+                profit = profit * result
+                if result < mini :
+                    mini = result
+                if maxi < result :
+                    maxi = result
+
+
+    accuracy = accuracy_score(df_test['up'][length:].values, np.array(pred).ravel())
+
+    tn, fp, fn, tp = confusion_matrix(df_test['up'][length:].values, np.array(pred).ravel()).ravel()
+
+    recall = tp/(tp+fn)
+    speci = tn/(tn+fp)
+
+    return accuracy, recall, speci , profit, mini, maxi
+
+

@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import os
 from dotenv import load_dotenv
+import pandas_datareader as pdr
+import ipdb
 
 load_dotenv()
 
@@ -77,35 +79,16 @@ def get_rsi(df,n):
     return df_rsi['rsi_14']
 
 
-def get_MA_EMA(df):
-    ma_5 = df['close'].rolling(window=5).mean()
-    ma_10 = df['close'].rolling(window=10).mean()
-    ma_25 = df['close'].rolling(window=25).mean()
-    ma_50 = df['close'].rolling(window=50).mean()
-    ma_100 = df['close'].rolling(window=100).mean()
-    #ma_200 = df.iloc[:,0].rolling(window=200).mean()
+def get_EMA_MACD(df):
 
-    ema_20 = df['close'].ewm(span = 20).mean()
-    ema_30 = df['close'].ewm(span = 30).mean()
+    ema_10 = df['close'].ewm(span = 10).mean()
 
-    diff_p_5 = df['close'] - ma_5
-    diff_p_10 = df['close'] - ma_10
-    diff_p_25 = df['close'] - ma_25
-    diff_P_100 = df['close'] - ma_100
+    ema_12 = df['close'].ewm(span = 12).mean()
+    ema_26 = df['close'].ewm(span = 26).mean()
 
-    diff_p_ema_20 = df['close'] - ema_20
-    diff_P_ema_30 = df['close'] -ema_30
+    macd = ema_12 - ema_26
 
-    diff_25_50 = ma_25 - ma_50
-    diff_25_100 = ma_25 - ma_100
-    diff_50_100 = ma_50 - ma_100
-
-    diff_ema_20_ema_30 = ema_20 - ema_30
-
-    diff_ma_5_ema_20 = ma_5 - ema_20
-    diff_ma_5_ema_30 = ma_5 - ema_30
-    diff_ema_20_ma_50 = ema_20 - ma_50
-    return diff_p_5, diff_p_10, diff_p_25, diff_P_100, diff_p_ema_20, diff_P_ema_30, diff_25_50, diff_25_100, diff_50_100, diff_ema_20_ema_30, diff_ma_5_ema_20, diff_ma_5_ema_30, diff_ema_20_ema_30
+    return macd, ema_10
 
 
 
@@ -171,19 +154,375 @@ def get_ATR(df):
     df_atr['ATR'] = df_atr['TR'].rolling(window=14).mean()
     return df_atr['ATR']
 
+def new_adress() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/addresses/new_non_zero_count'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    date = []
+    adresses = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        adresses.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['adresses'] = adresses
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+def sopr() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/indicators/sopr'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    date = []
+    sopr = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        sopr.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['sopr'] = sopr
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+def comp_ribbon() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/indicators/difficulty_ribbon_compression'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    date = []
+    comp_ribbon = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        comp_ribbon.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['comp_ribbon'] = comp_ribbon
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+def create_utxo() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/blockchain/utxo_created_count'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    date = []
+    utxo = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        utxo.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['utxo'] = utxo
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+def transac_sec() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/transactions/rate'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    date = []
+    transac = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        transac.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['transac'] = transac
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+def mvrv_z() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/market/mvrv_z_score'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    date = []
+    mvrv_z = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        mvrv_z.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['mvrv_z'] = mvrv_z
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+def nvts() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/indicators/nvts'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    date = []
+    nvts = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        nvts.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['nvts'] = nvts
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+def pct_profit() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/supply/profit_relative'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    date = []
+    profit = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        profit.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['profit'] = profit
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+def supp_last_act() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/supply/active_1d_1w'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    supp_last_act = []
+    date = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        supp_last_act.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['supp_last_act'] = supp_last_act
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+def active_adress() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/addresses/active_count'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    active_adress = []
+    date = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        active_adress.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['active_adress'] = active_adress
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+def fees_total() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/fees/volume_sum'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    fees_total = []
+    date = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        fees_total.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['fees_total'] = fees_total
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+
+def hash_rate() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/mining/hash_rate_mean'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    hash_rate = []
+    date = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        hash_rate.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['hash_rate'] = hash_rate
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+def transactions_count() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/transactions/count'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    transactions_count = []
+    date = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        transactions_count.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['transactions_count'] = transactions_count
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+def utxo_spent() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/blockchain/utxo_spent_count'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    utxo_spent = []
+    date = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        utxo_spent.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['utxo_spent'] = utxo_spent
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+def utxo_create_tot() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/blockchain/utxo_created_value_sum'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    utxo_create_tot = []
+    date = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        utxo_create_tot.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['utxo_create_tot'] = utxo_create_tot
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+def utxo_spent_tot() :
+    url_glassnode = 'https://api.glassnode.com/v1/metrics/blockchain/utxo_spent_value_sum'
+    parameters = {
+     'api_key' : API_KEY,
+     'a' : 'BTC'
+             }
+    data = requests.get(url  = url_glassnode, params = parameters).json()
+    utxo_spent_tot = []
+    date = []
+    for i in range(len(data)) :
+        date.append(data[i]['t'])
+        utxo_spent_tot.append(data[i]['v'])
+    df = pd.DataFrame(date, columns = ['date'])
+    df['utxo_spent_tot'] = utxo_spent_tot
+    df['date'] = pd.to_datetime(df['date'], unit = 's')
+    df.set_index('date', inplace = True)
+    return df
+
+
+def get_sp(df_) :
+    df = pdr.data.DataReader("^gspc",
+                       start='2010-07-19',
+                       data_source='yahoo')
+    df.reset_index(inplace = True)
+    df['Date'] = pd.to_datetime(df['Date'])
+
+    price = [df['Close'][0],df['Close'][0], df['Close'][0]]
+    for i in range(1,len(df)) :
+        if (df['Date'][i] - df['Date'][i-1]).days == 1 :
+            price.append(df['Close'][i])
+        elif (df['Date'][i] - df['Date'][i-1]).days == 2 :
+            price.append(df['Close'][i-1])
+            price.append(df['Close'][i])
+        elif (df['Date'][i] - df['Date'][i-1]).days == 3 :
+            price.append(df['Close'][i-1])
+            price.append(df['Close'][i-1])
+            price.append(df['Close'][i])
+        elif (df['Date'][i] - df['Date'][i-1]).days == 4 :
+            price.append(df['Close'][i-1])
+            price.append(df['Close'][i-1])
+            price.append(df['Close'][i-1])
+            price.append(df['Close'][i])
+        elif (df['Date'][i] - df['Date'][i-1]).days == 5 :
+            price.append(df['Close'][i-1])
+            price.append(df['Close'][i-1])
+            price.append(df['Close'][i-1])
+            price.append(df['Close'][i-1])
+            price.append(df['Close'][i])
+    price.append(df['Close'].iloc[-1])
+    #price.append(df['Close'].iloc[-1])
+    #price.append(df['Close'].iloc[-1])
+    df_sp = df_.copy()
+    df_sp['sp'] = price
+
+    pct = [0]
+    for x in range(1,len(df_sp)) :
+        mouv = (df_sp['sp'].iloc[x] - df_sp['sp'].iloc[x-1])/ df_sp['sp'].iloc[x-1]
+        pct.append(mouv)
+
+    df_sp['sp'] = pct
+
+    return df_sp['sp']
+
 
 
 df = get_btc_OHLC()
 df['rsi_14']= get_rsi(df,14)
-df[1],df[2],df[3],df[4],df[5],df[6], df[7], df[8], df[9], df[10], df[11], df[12], df[13] = get_MA_EMA(df)
+df['macd'], df['ema_10'] = get_MACD(df)
 df['SMI'] = get_SMI(df)
 df['CCI'] = get_CCI(df)
 df['william_a/d'] = get_william_A_D(df)
 df['ATR'] = get_ATR(df)
 df['ath'] = get_drawdown_ath()
+df['new_adress'] = new_adress()
+df['sopr'] = sopr()
+df['comp_ribbon'] = comp_ribbon()
+df['utxo'] = create_utxo()
+df['transac_sec'] = transac_sec()
+df['mvrv_z'] = mvrv_z()
+df['nvts'] = nvts()
+df['pct_profit'] = pct_profit()
+df['supp_last_act'] = supp_last_act()
+df['sp'] = get_sp(df)
+df['active_adress'] = active_adress()
+df['fees_total'] = fees_total()
+df['hash_rate'] = hash_rate()
+df['transactions_count'] = transactions_count()
+df['utxo_spent'] = utxo_spent()
+
+
+
+
+
+
+
 
 #df.to_csv('../data/data.csv')
 
 if __name__ == '__main__':
-    df.to_csv('data.csv')
+    df.to_csv('data/data.csv')
 

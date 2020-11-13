@@ -11,6 +11,12 @@ import ipdb
 
 
 def get_sample(df, length, temporal_horizon, style, start):
+    '''generates a sample X, the number of rows of the vector X equals the length,
+     and the number of columns equals the temporal_horizon. generates the single
+     target y associated with the sample X. Takes as input the dataframe from
+     which the samples are extracted,length, temporal_horizon ,the style of the
+     model from which the data will be entered, 'clf' or 'regressor', Start is
+     the location of the first line of the sample X.'''
 
     temporal_horizon = temporal_horizon - 1
     last_possible = df.shape[0] - temporal_horizon - length
@@ -26,6 +32,11 @@ def get_sample(df, length, temporal_horizon, style, start):
 
 
 def get_X_y(df, temporal_horizon, length, style):
+    """Takes as input the dataframe from which the samples are extracted ,we
+    iterate on it to generate all the pairs of X_sample and y_sample available
+    in our DataFrame. the function takes the length, the temporal_horizon of the samples, and
+    the style of the model. """
+
     X, y = [], []
 
     for len_ in range(len(df)-temporal_horizon -length):
@@ -38,6 +49,9 @@ def get_X_y(df, temporal_horizon, length, style):
 
 
 def get_X_y_DNN(df, temporal_horizon, length, style):
+    """same as get_X_y, except that we transform our X vector into a vector with
+    a dimension equal to temporal_horizon * length, in order to pass it to our DNN
+    network. """
     X, y = [], []
 
     for len_ in range(len(df)-temporal_horizon -length):
@@ -48,6 +62,8 @@ def get_X_y_DNN(df, temporal_horizon, length, style):
     return X, y
 
 def wavelet_transform(df):
+    """ we take as input the column of the DataFrame to be transformed, we
+    decompose it then reconstruct the signal, and return a new 'de-noise' series. """
     ca , cb = pywt.wavedec(df.values, 'haar', level = 1)
     cat = pywt.threshold(ca, np.std(ca), mode = 'soft')
     cbt = pywt.threshold(cb, np.std(cb), mode = 'soft')
@@ -55,6 +71,8 @@ def wavelet_transform(df):
     return pywt.waverec(coeff, 'haar')
 
 def autoencoder(features):
+    """we take as input the number of features to be encoded, and return the neural
+     network autoencoder"""
     input_data = Input(shape=(1, features))
     encoded1 = Dense(features, activation="relu", activity_regularizer=regularizers.l2(0))(input_data)
     one_l = Dense(1, activation="relu", activity_regularizer=regularizers.l2(0))(encoded1)
@@ -66,6 +84,9 @@ def autoencoder(features):
 
 
 def lstm_model(length, n_days, features, style) :
+    """ We take as input the characteristics of the network, temporal depth = length,
+     temporal_horizon = n_days, number of fetaures = features, style = 'clf' or
+     'regressor', the function returns the model to us"""
     model = Sequential()
     model.add(LSTM(features,activation = 'tanh',input_shape=(length, features),return_sequences = True))
     model.add(Bidirectional(LSTM(features/2,activation = 'tanh')))
@@ -84,6 +105,9 @@ def lstm_model(length, n_days, features, style) :
 
 
 def DNN_model(length, n_days, features) :
+    """ We take as input the characteristics of the network, temporal depth = length,
+     temporal_horizon = n_days, number of fetaures = features, the function returns
+    the model to us"""
     nb = length * features
     model = Sequential()
     model.add(Dense(nb,activation = 'relu',input_dim=(nb)))
@@ -98,25 +122,25 @@ def DNN_model(length, n_days, features) :
 
 
 def plot_loss(history):
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title('Model loss')
-    plt.ylabel('Mean Square Error - Loss')
+    """ Takes the fitting history of the network and returns the learning curves """
+
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.title('Model accuracy')
+    plt.ylabel('accuracy')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'], loc='best')
     plt.show()
 
-    plt.plot(history.history['accuracy'])
-    plt.plot(history.history['val_accuracy'])
-    plt.title('Model loss')
-    plt.ylabel('Mean Absolute Error')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'], loc='best')
-    plt.show()
 
 
 
 def get_accuracy_LSTM(df_test, df_true, model, length) :
+    """ Takes the test portion of the transformed and scaled DataFrame to perform
+    prediction (df_test), and the test portion without logarithmic transformation
+    or sclaing to evaluate performance (df_true), trained model, time depth (length).
+    Returns accuracy score, recall, specificity, yield, maximum loss in one day, and
+     maximum gain in one day """
     pred = []
     profit = 1
     mini = 1
@@ -151,6 +175,7 @@ def get_accuracy_LSTM(df_test, df_true, model, length) :
     return accuracy, recall, speci, profit, mini, maxi
 
 def get_accuracy_DNN(df_test,df_true, model, length) :
+    """ same as the previous function but adapted to DNN networks """
     pred = []
     profit = 1
     mini = 1

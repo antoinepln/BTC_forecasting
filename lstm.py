@@ -10,6 +10,11 @@ import json
 
 class Trainer() :
     def __init__(self, df, df_test, n_days, length, style) :
+        """
+        instantiate trainer object with the training Dataframe (df), the testing
+        Dataframe (df_test), the temporal_horizon n_days, the tremporal depth length,
+        the style of the network to train 'clf' or 'regressor'.
+        """
         self.n_days = n_days
         self.length = length
         self.df = df
@@ -19,6 +24,9 @@ class Trainer() :
         self.df_true = df_test.copy()
 
     def train(self):
+        """
+        Scale the Dataframe, chunk our data into X and y samples, Fit the Neural Network
+        """
         df = self.df
         self.scaler = MinMaxScaler()
         self.scaler.fit(df)
@@ -40,6 +48,9 @@ class Trainer() :
                     verbose = True)
 
     def learning_viz(self) :
+        """
+        Get the learning curves to visualize the fitting
+        """
         self.train
         history = self.history
         plot_loss(history)
@@ -47,6 +58,9 @@ class Trainer() :
 
 
     def get_perf(self) :
+        """
+        Get the metrics of our train Nural Network
+        """
         self.train()
         self.df_true = self.df_true[self.length:]
         self.accuracy , self.recall, self.specificity, self.profit, self.min , self.max = get_accuracy_LSTM(self.df_test, self.df_true,self.model, self.length)
@@ -57,7 +71,11 @@ class Trainer() :
 
 
 if __name__ == '__main__':
-
+    """
+    Iterate over the temporal_depth, the temporal_horizon, and the learning years.
+    Train and test model for all this parameters over all the quarters.
+    Save the results in perf_summary folder
+    """
     lenght_list = [5,10,20,50]
     temporal_horizon = [1,7]
     learning_years = ['2y','3y']

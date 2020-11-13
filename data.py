@@ -11,6 +11,7 @@ load_dotenv()
 API_KEY = os.getenv('GLASSNODES_API_KEY')
 
 def get_btc_OHLC():
+    """ Get Bitcoin daily OHLC from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/market/price_usd_ohlc'
     parameters = {
      'api_key' : API_KEY,
@@ -41,6 +42,8 @@ def get_btc_OHLC():
     return df
 
 def get_drawdown_ath():
+     """ Get Bitcoin daily drawdown from ATH from glassnode API """
+
     url_glassnode = 'https://api.glassnode.com/v1/metrics/market/price_drawdown_relative'
     parameters = {
      'api_key' : API_KEY,
@@ -61,6 +64,8 @@ def get_drawdown_ath():
 
 
 def get_rsi(df,n):
+    """ the input df is the dataframe containing the closing price, and n is the number of
+    periods over which our RSI is calculated """
     n = 14
     df_rsi = df.copy()
     def rma(x, n, y0):
@@ -80,6 +85,7 @@ def get_rsi(df,n):
 
 
 def get_EMA_MACD(df):
+    """ takes the Dataframe containing the closing price as an input."""
 
     ema_10 = df['close'].ewm(span = 10).mean()
 
@@ -94,6 +100,7 @@ def get_EMA_MACD(df):
 
 
 def get_SMI(df) :
+    """ takes the Dataframe containing the closing price as an input."""
     period = 10
     df_smi = df.copy()
     Max= df.iloc[:,0].rolling(10).max()
@@ -105,6 +112,7 @@ def get_SMI(df) :
     return HS2 / DHL2
 
 def get_CCI(df)  :
+    """ takes the Dataframe containing the closing, the high and the low price as an input."""
     df_cci = df.copy()
     cours_moyen = (df['close'] + df['high'] + df['low']) / 3
     SMATP = cours_moyen.rolling(window=20).mean()
@@ -114,6 +122,7 @@ def get_CCI(df)  :
 
 
 def get_william_A_D(df) :
+    """ takes the Dataframe containing the closing, the high and the low price as an input."""
     df_a_d = df.copy()
     TRH = {}
     for x in range(1,len(df_a_d)) :
@@ -143,6 +152,7 @@ def get_william_A_D(df) :
 
 
 def get_ATR(df):
+    """ takes the Dataframe containing the closing, the high and the low price as an input."""
     df_atr = df.copy()
     a = df_atr['high'] - df_atr['low']
     b = abs(df_atr['high'] - df_atr['close'])
@@ -155,6 +165,7 @@ def get_ATR(df):
     return df_atr['ATR']
 
 def new_adress() :
+    """ Get Bitcoin daily new_adresses from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/addresses/new_non_zero_count'
     parameters = {
      'api_key' : API_KEY,
@@ -173,6 +184,7 @@ def new_adress() :
     return df
 
 def sopr() :
+    """ Get Bitcoin daily SOPR from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/indicators/sopr'
     parameters = {
      'api_key' : API_KEY,
@@ -191,6 +203,7 @@ def sopr() :
     return df
 
 def comp_ribbon() :
+    """ Get Bitcoin daily difficulty_ribbon_compression from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/indicators/difficulty_ribbon_compression'
     parameters = {
      'api_key' : API_KEY,
@@ -209,6 +222,7 @@ def comp_ribbon() :
     return df
 
 def create_utxo() :
+    """ Get Bitcoin daily UTXO create from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/blockchain/utxo_created_count'
     parameters = {
      'api_key' : API_KEY,
@@ -227,6 +241,7 @@ def create_utxo() :
     return df
 
 def transac_sec() :
+    """ Get Bitcoin daily transaction rate from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/transactions/rate'
     parameters = {
      'api_key' : API_KEY,
@@ -245,6 +260,7 @@ def transac_sec() :
     return df
 
 def mvrv_z() :
+    """ Get Bitcoin daily mvrv_z_score from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/market/mvrv_z_score'
     parameters = {
      'api_key' : API_KEY,
@@ -263,6 +279,7 @@ def mvrv_z() :
     return df
 
 def nvts() :
+    """ Get Bitcoin daily NVTS from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/indicators/nvts'
     parameters = {
      'api_key' : API_KEY,
@@ -281,6 +298,7 @@ def nvts() :
     return df
 
 def pct_profit() :
+    """ Get Bitcoin daily purcentage profit from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/supply/profit_relative'
     parameters = {
      'api_key' : API_KEY,
@@ -299,6 +317,7 @@ def pct_profit() :
     return df
 
 def supp_last_act() :
+    """ Get Bitcoin daily supply active last week from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/supply/active_1d_1w'
     parameters = {
      'api_key' : API_KEY,
@@ -317,6 +336,7 @@ def supp_last_act() :
     return df
 
 def active_adress() :
+    """ Get Bitcoin daily active_adress from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/addresses/active_count'
     parameters = {
      'api_key' : API_KEY,
@@ -335,6 +355,7 @@ def active_adress() :
     return df
 
 def fees_total() :
+    """ Get Bitcoin daily total_fees from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/fees/volume_sum'
     parameters = {
      'api_key' : API_KEY,
@@ -354,6 +375,7 @@ def fees_total() :
 
 
 def hash_rate() :
+    """ Get Bitcoin daily hash rate mean from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/mining/hash_rate_mean'
     parameters = {
      'api_key' : API_KEY,
@@ -372,6 +394,7 @@ def hash_rate() :
     return df
 
 def transactions_count() :
+    """ Get Bitcoin daily transactions from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/transactions/count'
     parameters = {
      'api_key' : API_KEY,
@@ -390,6 +413,7 @@ def transactions_count() :
     return df
 
 def utxo_spent() :
+    """ Get Bitcoin daily UTXO spent from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/blockchain/utxo_spent_count'
     parameters = {
      'api_key' : API_KEY,
@@ -408,6 +432,7 @@ def utxo_spent() :
     return df
 
 def utxo_create_tot() :
+    """ Get Bitcoin total UTXO create from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/blockchain/utxo_created_value_sum'
     parameters = {
      'api_key' : API_KEY,
@@ -426,6 +451,7 @@ def utxo_create_tot() :
     return df
 
 def utxo_spent_tot() :
+    """ Get Bitcoin total UTXO spent from glassnode API """
     url_glassnode = 'https://api.glassnode.com/v1/metrics/blockchain/utxo_spent_value_sum'
     parameters = {
      'api_key' : API_KEY,
@@ -444,7 +470,8 @@ def utxo_spent_tot() :
     return df
 
 
-def get_sp(df_) :
+def get_sp() :
+    """Get SP500 daily closing price from Yahoo finance """
     df = pdr.data.DataReader("^gspc",
                        start='2010-07-19',
                        data_source='yahoo')
@@ -521,7 +548,6 @@ df['utxo_spent'] = utxo_spent()
 
 
 
-#df.to_csv('../data/data.csv')
 
 if __name__ == '__main__':
     df.to_csv('data/data.csv')

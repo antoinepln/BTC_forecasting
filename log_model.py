@@ -12,6 +12,11 @@ from sklearn.metrics import accuracy_score, confusion_matrix
 
 class Trainer() :
     def __init__(self, df, df_test, n_days, length, style) :
+        """
+        instantiate trainer object with the training Dataframe (df), the testing
+        Dataframe (df_test), the temporal_horizon n_days, the tremporal depth length,
+        the style of the network to train 'clf' or 'regressor'.
+        """
         self.n_days = n_days
         self.length = length
         self.df = df
@@ -22,6 +27,9 @@ class Trainer() :
 
 
     def train(self):
+        """
+        Scale the Dataframe, chunk our data into X and y samples, Fit the Logistic Regression
+        """
         df = self.df
         self.scaler = MinMaxScaler()
         self.scaler.fit(df)
@@ -38,6 +46,9 @@ class Trainer() :
 
 
     def get_perf(self) :
+        """
+        Get the metrics of our Logistic Regression model
+        """
         self.train()
 
         prediction = self.clf.predict(self.df_test.drop(columns = 'up')[:-1])
@@ -69,9 +80,12 @@ class Trainer() :
 
 
 if __name__ == '__main__':
+    """
+    Train and test the Logistic Regression 10 times for all quarters
+    """
     n_days = 1
     length = 1
-    df  = pd.read_csv('data_2.csv').set_index('date').dropna()
+    df  = pd.read_csv('data/data.csv').set_index('date').dropna()
     #ipdb.set_trace()
     for t in range(2) :
         n = 1425

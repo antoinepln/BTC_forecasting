@@ -11,6 +11,11 @@ import json
 
 class Trainer() :
     def __init__(self, df, df_test, n_days, length, style, model) :
+        """
+        instantiate trainer object with the training Dataframe (df), the testing
+        Dataframe (df_test), the temporal_horizon n_days, the tremporal depth length,
+        the style of the network to train 'clf' or 'regressor'.
+        """
         self.n_days = n_days
         self.length = length
         self.df = df
@@ -21,6 +26,11 @@ class Trainer() :
         self.model = model
 
     def train(self):
+        """
+        Scale the Dataframe, depends on the model, encode the features, Wavelet
+        Transformation, quadratic discriminant analysis, chunk our data into X and
+        y samples, Fit the Neural Network.
+        """
         df = self.df
         self.scaler = MinMaxScaler()
 
@@ -161,6 +171,9 @@ class Trainer() :
 
 
     def get_perf(self) :
+        """
+        Get the metrics of our train Nural Network
+        """
         self.train()
         self.df_true = self.df_true[self.length:]
         self.accuracy , self.recall, self.specificity, self.profit, self.min , self.max = get_accuracy_LSTM(self.df_test, self.df_true,self.model, self.length)
@@ -171,6 +184,11 @@ class Trainer() :
 
 
 if __name__ == '__main__':
+    """
+    Iterate over the models.
+    Train and test model for all this models over all the quarters.
+    Save the results in perf_summary folder
+    """
 
     model_list = ['wav','encoder','qda','wav_encoder','wav_qda']
     for mod_ in model_list :

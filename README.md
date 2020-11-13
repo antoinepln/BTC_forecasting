@@ -92,6 +92,7 @@ According to this implementation we get an exponent hurst of 0.64. This is in li
 
 To close this section we will calculate the autocorrelation coefficient of time lag equal to 100 days for 10 randomly chosen sequences. This will give us a new opportunity to observe how the dependence between past price levels and new price levels that follow them behaves. It will also help us to choose the time depth we will use to feed our neural networks. If I use the closing price of the last 5 days to predict the closing price of the next day, I have a time depth equal to 5, for a time horizon equal to 1, if I had chosen to use the closing price of the last 10 days, my time depth would be equal to 10.
 
+<div align=center><img width="800" height="300" src="https://github.com/antoinepln/BTC_forecasting/blob/master/test_md.png"/></div>
 ![unchanged image](files/test_md.png)
 ![Caption for the picture.](test_md.png)
 

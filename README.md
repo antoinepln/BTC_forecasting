@@ -66,7 +66,7 @@ Each quarter corresponds to a new model trained over the 8 and 12 quarters prece
 
 **[References 23](#_Toc56177209)**
 
-**[code execution](#_Toc56177210)** 24
+**[Code Execution 24](#_Toc56177210)**
 
 #
 
@@ -495,4 +495,56 @@ We have proven that neural networks are capable of generating a consistent super
 
 [14_] Bitcoin technical trading with artificial neural network_ , Masafumi Nakano, AkihikoTakahashi , Soichiro Takahashi
 
-# code execution
+# Code Execution
+
+**4 python executable :**
+
+- Data.py
+
+- Denoise\_model.py
+
+- DNN.py
+
+- Log\_model.py
+
+- Lstm.py
+
+- Utility\_function.py
+
+First we run Data.py.
+
+This executable contains 25 functions, 16 functions that extract data from the Glassnodes API, 8 functions that calculate technical indicators based on data already extracted, and a function that extracts SP500 prices.
+
+Everything is concatenated into a single DataFrame at the end of the document. We add a CSV save function, indented in our &quot;if \_\_name\_\_ == &#39;\_\_main\_\_&#39;&quot;.
+
+**The data extracted from Glassnodes are paying, the key is stored in our .env file, if you want to use this structure please subscribe and place your key in the .env file, it will not be visible to everyone thanks to the .gitignore file.**
+
+Then you just have to run &#39; python data.py&#39; from your terminal, the data.csv file will be stored in the data folder.
+
+Then you run log\_model.py, lstm.py, DNN.py. These 3 executables contain Trainer created as a class, and the execution of these indented codes under &quot;if \_\_name\_\_ == &#39;\_\_main\_\_&#39;&quot;.
+
+In the terminal, type &quot;python log\_model.py&quot;, &quot;python lstm.py&quot;, &quot;python dnn.py&quot;.
+
+Running these files will start the trainings for several parameters, all the results will be stored in the perf\_summary folder.
+
+We can then run Denoise\_model.py, built in the same way as the 3 previous files, it implements several denoising methods on a model. The idea is to test these denoising methods on the best performing model during the previous results.
+
+In the terminal, type &quot;python Denoise\_model.py&quot;.
+
+The executable utility\_function.py stores preprocessing, scaling and modeling functions, which we use in our all files except in data.py.
+
+**In summary, all you need to do is :**
+
+**- enter your Glassnodes API key in the .env file**
+
+**- Terminal: python data.py**
+
+**- Terminal: python log\_model.py**
+
+**- Terminal: python lstm.py**
+
+**- Terminal: python DNN.py**
+
+**- Terminal: python Denoise\_model.py**
+
+All the tests are performed 10 times, for more accuracy, so the calculation time can be very important, the use of Cloud Computing tools can be judicious.

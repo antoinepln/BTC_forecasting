@@ -1,5 +1,3 @@
-# BTC_forecasting
-
 # Introduction
 
 Market efficiency theory suggests that all information about an asset is reflected in its price level.This &quot;fair&quot; price level implies that it should be impossible to generate an abnormal return relative to the market over the long term. This theory is widely contested and is the subject of much controversy in our traditional markets (SP500, DAX30, Nasdaq ...).
@@ -28,45 +26,51 @@ Each quarter corresponds to a new model trained over the 8 and 12 quarters prece
 
 # Table des matières
 
-**[Introduction 1](#_Toc56157656)**
+**[Introduction 1](#_Toc56177190)**
 
-**[Analysis of bitcoin price movements 3](#_Toc56157657)**
+**[Analysis of bitcoin price movements 3](#_Toc56177191)**
 
-**[Features explorations 5](#_Toc56157658)**
+**[Features explorations 5](#_Toc56177192)**
 
-**[Preprocessing &amp; Training Architecture 7](#_Toc56157659)**
+**[Preprocessing &amp; Training Architecture 7](#_Toc56177193)**
 
-**[preprocessing 7](#_Toc56157660)**
+**[preprocessing 7](#_Toc56177194)**
 
-[logarithmic transformation 7](#_Toc56157661)
+[logarithmic transformation 7](#_Toc56177195)
 
-[Scaling 7](#_Toc56157662)
+[Scaling 7](#_Toc56177196)
 
-**[TRAINNING ARCHITECTURE 8](#_Toc56157663)**
+**[TRAINNING ARCHITECTURE 7](#_Toc56177197)**
 
-**[Neural Networks 9](#_Toc56157664)**
+**[Neural Networks 9](#_Toc56177198)**
 
-**[DNN 9](#_Toc56157665)**
+**[DNN 9](#_Toc56177199)**
 
-**[LSTM 12](#_Toc56157666)**
+**[LSTM 11](#_Toc56177200)**
 
-**[Result 14](#_Toc56157667)**
+**[Results 14](#_Toc56177201)**
 
-**[Deep Neural Network 15](#_Toc56157668)**
+**[Deep Neural Network 15](#_Toc56177202)**
 
-**[LSTM 17](#_Toc56157669)**
+**[LSTM 17](#_Toc56177203)**
 
-**[Accumulated return over the 12 quarters :](#_Toc56157670) ![](RackMultipart20201113-4-wpmvsu_html_dc508a92392c55c2.png) ![](RackMultipart20201113-4-wpmvsu_html_7c597f824ea08505.png)[17](#_Toc56157670)**
+**[DENOISING 19](#_Toc56177204)**
 
-**[DENOISING 19](#_Toc56157671)**
+**[Wavelet transform 20](#_Toc56177205)**
 
-**[Wavelet transform 20](#_Toc56157672)**
+**[PCA 20](#_Toc56177206)**
 
-**[PCA 20](#_Toc56157673)**
+**[Result 21](#_Toc56177207)**
 
-**[Result 21](#_Toc56157674)**
+**[CONCLUSION 22](#_Toc56177208)**
 
-**[CONCLUSION 22](#_Toc56157675)**
+**[References 23](#_Toc56177209)**
+
+**[code execution](#_Toc56177210)** 24
+
+#
+
+#
 
 # Analysis of bitcoin price movements
 
@@ -138,12 +142,11 @@ This represents a first sample of features, which we then test by calculating Sp
 
 <img src= "image/heatmap_correlation.png" />
 
-
 To begin with, we keep all the indicators that have a correlation higher than 0.8 over the whole period.
 
 Moreover when we vary the periods we find interesting results for mvrv\_z, nvts, and pct\_profit, for example period (2016-03-09 - 2017-07-22) :
 
-mvrv\_z 0.988369
+mvrv\_z 0.98836
 
 nvts 0.929820
 
@@ -167,6 +170,7 @@ As mentioned above, the evolution of prices is punctuated by major upward cycles
 
 <img src= "image/log_transfo.png" />
 
+
 ### Scaling
 
 We have dealt with different orders of magnitude for the same feature, we will now deal with different orders of magnitude between features so that the networks do not overweight the weights assigned to a feature that has a large order of magnitude. We will normalize all the variables so that their distributions are between 0 and 1. These calculations are performed to normalize each feature:
@@ -181,7 +185,7 @@ We now have our set of 16 features scaled between 0 and 1.
 
 As mentioned above we will test the model for time depths 5,10,20,50. However, these are not the only parameters that we will vary. We are going to test our models according to different training and test periods.
 
-We will test our models for 12 quarters, from November 2017 to .........
+We will test our models for 12 quarters, from November 2017 to November 2018.
 
 For each quarter the model applied will be trained either over the last 2 years or the last 3 years.
 
@@ -190,6 +194,7 @@ This gives us 12 training sets of 730 periods, for 12 corresponding test sets of
 For the 2 years training this gives us 12 training sets of 1095 periods, for 12 corresponding test sets of 90 periods.
 
 <img src= "image/learning_archi.png" />
+
 
 We started by performing split validation of 0.2 for the training set, adding an early\_stopping to our model that stopped learning our models when the accuracy of the validation set did not increase for 15 periods. However, we made the decision not to work like that anymore. The final goal of our research is to maximize the gains associated with these prediction models, accuracy is only an intermediate metric as important as it is. In many cases accuracy may not increase or even decrease, but our networks may be learning the patterns preceding the most important movements. In a small proportion of periods we find the majority of price movements. An accuracy of 30% may not be able to detect minor movements but will predict with conviction the periods representing 90% of the variance of a quarter.
 
@@ -281,9 +286,11 @@ Our input layer will be composed of a layer of n neurons, which corresponds to t
 
 Following the same approach as for DNN, we test configurations between 1 and 5 hidden layers. We observe that a model with one hidden layer learns very well, and that adding layers does not seem to induce a better learning, on the contrary . Our model will therefore be composed of one hidden layer. In order to avoid or at least to limit overfitting, i.e., that our model learns too specifically movements that are specific to our training set, we add a dropout layer after our hidden layer. This layer will be followed by the output neuron, with sigmoid activation function.
 
+_network summary_
+
 <img src= "image/sum_lstm.png" />
 
-# Result
+# Results
 
 Neural networks are a stochastic algorithm, meaning that the same algorithm trained on the same data can train a different model each time the code is run.
 
@@ -374,9 +381,11 @@ We see that when we increase the time horizon to 7 periods it decreases the resu
 
 <img src= "image/best_model.png" />
 
+
 Even if some models do not have a very strong cumulative performance, it may perform well in some quarters. The best-performing models do not necessarily perform well in all periods. We have therefore observed which models are the best performers in each period:
 
 <img src= "image/best_period.png" />
+
 
 The results clearly show us that using past prices to predict future prices can yield additional returns. In both cases, the Strategies have returns that are far superior to a strategy of random buying. Thus, neural models are able to extract information from past prices that allows them to predict a large proportion of upward movements while still predicting some downward movements. We deduce from this the existence of certain market inefficiencies for the prices of Bitcoin. In the rest of this paper, we will try to optimize our most efficient network, based on a model already implemented on the traditional markets. [2] [3].
 
@@ -392,9 +401,9 @@ Searches [2][3] don&#39;t stop there, they add another step to extract the main 
 
 - Quadratic discriminant analysis (close to PCA)
 
--wavelet  Autoencoder
+- Wavelet - Autoencoder
 
-- wavelet  Quadratic discriminant analysis
+- Wavelet - Quadratic discriminant analysis
 
 ## Wavelet transform
 
@@ -402,7 +411,7 @@ Wavelet Tranform is a signal extraction method, very similar to the famous Fourr
 
 There are several types of Wavelets, we use Haar as a basic function for our implementation [2]. We choose a Discrete Wavelet Transformation rather than a Continuous Transformation Wavelet, the sampling of the DWT is a way to avoid the redundancy of the CWT [2].
 
-_ tranformation Scheme :_
+Wavelet Transformation Scheme :_
 
  <img src= "image/wav.png" />
 
@@ -455,3 +464,35 @@ Thus, methods used in traditional markets do not seem to work for our asset. How
 # CONCLUSION
 
 We have proven that neural networks are capable of generating a consistent superior performance using past historical information. This includes strong evidence of the presence of market inefficiencies for Bitcoin&#39;s assets, and therefore surely for the entire crypto-cash market. It has also been observed that higher returns do not always correspond to higher accuracy, the majority of the movements are minimal, and only a small proportion is of interest to us. However this was only an exploratory study, these models are in my opinion not mature enough to be implemented in real life. A lot of work remains to be done. The denoising of the time series that we give as input to our model is still a grey area. It has been mentioned that the social fabric is very important for this asset [6], but none of our features reflect the market sentiment. Many tools can be used to do this, one search observes correlations between the price of Bitcoin, the google trends search curve of the term &#39;Bitcoin&#39; and the volume of positive tweets about this asset [9]. As we have seen in the [result] section, learning takes place over the last 2 or 3 years, these periods usually encompass a considerable number of patterns. However, if similar periods could be identified, would it not be better to train the patterns over the period following the past similar period .
+
+# References
+
+[1] _A deep stacked wavelet auto-encoders to supervised feature extraction to pattern classification_, March 2018, Salima Hassairi, Ridha Ejbali, Mourad Zaied.
+
+[2]_A deep learning framework for financial time series using stacked autoencoders and long-short term memory_, July 2017, Wei Bao, Jun Yue, Yulei Rao.
+
+[3] _Forecasting East Asian Indices Futures via a Novel Hybrid of Wavelet-PCA Denoising and Artificial Neural Network Models_, June 2016, Jacinta Chan Phooi M&#39;ng, Mohammadali Mehralizadeh.
+
+[4] _Data mining with computational intelligence: Springer Science &amp; Business Media_, 2006, Wang L, Fu X.
+
+[5] _A statistical risk assessment of bitcoin and its extreme tail behavior_, Joerg Osterrieder, Julian Lorenz
+
+[6]_The digital traces of bubbles: Feedback cycles between socio-economic signals in the Bitcoin economy_, August 2014, David Garcia, Claudio J.Tessone, Pavlin Mavrodiev
+
+[7] _Scaling properties of extreme price fluctuations in Bitcoin markets_, November 2018 ,S.Begušić, Z Kostanjčar, HE Stanley, B Podobnik
+
+[8_]_Basics of Statistical Mean Reversion Testing, Quantstart.com
+
+[9] _Bitcoin Spread Prediction Using Social And Web Search Media_, June 2015 ,Martina Matta , Maria Llaria Lunesu, Michele Marchesi.
+
+[10]_Testing the Suitability of Wavelet Preprocessing for TSK Fuzzy Models_, January 2006 , Khurshid Ahmad, Ademola Popoola.
+
+[11] _Principal component analysis_, March 2009, Aapo Hyvarinen.
+
+[12] _Bitcoin: A Peer-to-Peer Electronic Cash System_, Satoshi Nakamoto.
+
+[13] _Long Short-term Memory_, December 1997 , Sepp Hochreiter
+
+[14_] Bitcoin technical trading with artificial neural network_ , Masafumi Nakano, AkihikoTakahashi , Soichiro Takahashi
+
+# code execution

@@ -84,13 +84,15 @@ To test this price independence we can use rescaled range analysis, by calculati
 
 The Hurst exponent is calculated according to this relation :
 
+        (⟨|log⁡(t+τ)-log⁡(t)|^2⟩∼τ^2H )
+
 The left side of the equation represents the variance for a time lag t. According to Brownian motion, τ should be proportional to this variance, as follows:
 
-If H is equal to 0.5, = prices follow a random walk.
+If H is equal to 0.5, τ  =〖 τ〗^2H prices follow a random walk.
 
-If H is greater than 0.5, \&lt; , it is said that the price series is trending, an upward movement will be followed by an upward movement.
+If H is greater than 0.5, τ   <〖 τ〗^2H , it is said that the price series is trending, an upward movement will be followed by an upward movement.
 
-If H is less than 0.5, \&gt; , the price series is said to be trending (mean reverting), an increase in price will tend to be followed by a decrease which will then be followed by an increase.
+If H is less than 0.5, τ   >〖 τ〗^2H , the price series is said to be trending (mean reverting), an increase in price will tend to be followed by a decrease which will then be followed by an increase.
 
 According to this implementation we get an exponent hurst of 0.64. This is in line with the cycle vision of the Bitcoin market. Strong upward momentum would lead prices to reach ever higher levels during these cycles. The above implementation is just one implementation at a time, each implementation can cause this value to vary significantly. In addition, the statistical significance of this measure should be tested to prove the long-term memory of the crypto-money market. However, this encourages us to test the implementation of models that take past prices as input to predict future prices.
 

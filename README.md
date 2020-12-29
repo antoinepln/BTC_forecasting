@@ -1,4 +1,4 @@
-# ** Can Artificial Neural Networks detect inefficiencies in the crypto-currencies market ? **
+# **Can Artificial Neural Networks detect inefficiencies in the crypto-currencies market ?**
 
 # Introduction
 

@@ -1,3 +1,5 @@
+# ** Can Artificial Neural Networks detect inefficiencies in the crypto-currencies market ? **
+
 # Introduction
 
 Market efficiency theory suggests that all information about an asset is reflected in its price level.This &quot;fair&quot; price level implies that it should be impossible to generate an abnormal return relative to the market over the long term. This theory is widely contested and is the subject of much controversy in our traditional markets (SP500, DAX30, Nasdaq ...).
